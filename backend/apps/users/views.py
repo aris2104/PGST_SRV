@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from utils.permissions import IsPresiOrSecretary
+from utils.permissions import IsPresiOrSecretary, CanBrowseMembers
 from .models import User, NotificationPreference
 from .serializers import (
     CustomTokenObtainPairSerializer, UserSerializer, UserUpdateSerializer,
@@ -66,9 +66,13 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.select_related('role').all()
 
     def get_permissions(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy'):
-            return [permissions.IsAuthenticated(), IsPresiOrSecretary()]
-        return [permissions.IsAuthenticated()]
+        # Lecture (liste/détail) : tout rôle responsable en a besoin pour choisir
+        # un servant dans ses formulaires (paiement, sanction...), mais pas un
+        # simple Servant. Écriture (créer/modifier/désactiver) : réservée à la
+        # gestion du groupe (Président/Secrétaire/Admin).
+        if self.action in ('list', 'retrieve'):
+            return [permissions.IsAuthenticated(), CanBrowseMembers()]
+        return [permissions.IsAuthenticated(), IsPresiOrSecretary()]
 
     def get_serializer_class(self):
         if self.action == 'create':

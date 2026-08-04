@@ -36,3 +36,17 @@ class IsAdmin(BasePermission):
     """Administrateur global de la plateforme."""
     def has_permission(self, request, view):
         return _has_role(request.user, 'ADMIN')
+
+
+class CanBrowseMembers(BasePermission):
+    """
+    Tout rôle "responsable" peut consulter la liste/le détail des membres
+    (le Trésorier et le Disciplinaire en ont besoin pour choisir un servant
+    dans leurs formulaires) — mais pas un simple Servant.
+    """
+    def has_permission(self, request, view):
+        return _has_role(
+            request.user,
+            'PRESIDENT', 'SECRETAIRE', 'TRESORIER',
+            'DISCIPLINAIRE', 'ORGANISATEUR', 'ADMIN',
+        )

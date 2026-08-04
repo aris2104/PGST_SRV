@@ -26,7 +26,7 @@ export default function PresiSecreDashboard() {
       <div className="px-5 py-5">
         <DashboardActionButton
           label="Administrer le groupe"
-          onClick={() => navigate('/presi-secre/ajouter-membre')}
+          onClick={() => navigate('/membres/ajouter')}
         />
         <DashboardActionButton 
           label="Programme Semaine" 

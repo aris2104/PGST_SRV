@@ -28,7 +28,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'matricule'
-    REQUIRED_FIELDS = ['nom', 'prenom']
+    REQUIRED_FIELDS = ['nom', 'prenom', 'membre_depuis']
 
     class Meta:
         verbose_name = 'Servant'

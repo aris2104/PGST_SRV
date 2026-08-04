@@ -27,7 +27,6 @@ import ContactAdminPage from '../pages/settings/ContactAdminPage'
 import PublierAnnoncePage from '../pages/roles-dashboards/PublierAnnoncePage'
 import PlanifierProgrammePage from '../pages/organisateur/PlanifierProgrammePage'
 
-
 // --- Disciplinaire ---
 import DisciplinaireSanctionsPage from '../pages/disciplinaire/DisciplinaireSanctionsPage'
 import EnregistrerSanctionPage from '../pages/disciplinaire/EnregistrerSanctionPage'
@@ -53,7 +52,7 @@ import AdminProgrammeAnnoncesPage from '../pages/admin/AdminProgrammeAnnoncesPag
 import AdminActivitePage from '../pages/admin/AdminActivitePage'
 import PresencesPage from '../pages/suivis/PresencesPage'
 
-import AddMemberPage from '../pages/Members/AddMemberPage'
+import AddMemberPage from '../pages/members/AddMemberPage'
 
 import { ROLES } from '../utils/constants'
 
@@ -118,15 +117,6 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/presi-secre/ajouter-membre"
-          element={
-            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN]}>
-              <AddMemberPage />
-            </ProtectedRoute>
-          }
-        />
-        
 
         {/* --- Sous-page Organisateur : uniquement l'ordre du jour --- */}
         <Route
