@@ -1,0 +1,76 @@
+from datetime import date
+from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+from .models import Cotisation
+from .serializers import CotisationSerializer
+
+
+class IsTresorierOrReadOnlyOwn(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        user = request.user
+        return bool(
+            user and user.is_authenticated and
+            (user.is_staff or (user.role and user.role.code in ('TRESORIER', 'ADMIN')))
+        )
+
+
+class CotisationViewSet(viewsets.ModelViewSet):
+    """
+    GET /api/cotisations/?annee=2026&mois=8   -> détail 'Ma cotisation' (écran maquette 6)
+    GET /api/cotisations/resume/              -> pour l'écran 'Suivis' (barre de progression)
+    """
+    serializer_class = CotisationSerializer
+    permission_classes = [permissions.IsAuthenticated, IsTresorierOrReadOnlyOwn]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['servant', 'annee', 'mois', 'statut']
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Cotisation.objects.select_related('servant')
+        is_privileged = user.is_staff or (user.role and user.role.code in ('TRESORIER', 'ADMIN'))
+        if not is_privileged:
+            qs = qs.filter(servant=user)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(enregistree_par=self.request.user)
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        devient_paye = (
+            serializer.validated_data.get('statut') == Cotisation.Statut.PAYE
+            and instance.statut != Cotisation.Statut.PAYE
+        )
+        extra = {'enregistree_par': self.request.user}
+        if devient_paye and not instance.date_paiement:
+            extra['date_paiement'] = date.today()
+        serializer.save(**extra)
+
+    @action(detail=False, methods=['get'])
+    def resume(self, request):
+        """Progression du mois en cours + cumul annuel (X/48 semaines payées)."""
+        today = date.today()
+        qs_mois = Cotisation.objects.filter(
+            servant=request.user, annee=today.year, mois=today.month,
+        )
+        total_semaines_mois = qs_mois.count() or 1
+        payees_mois = qs_mois.filter(statut=Cotisation.Statut.PAYE).count()
+
+        qs_annee = Cotisation.objects.filter(servant=request.user, annee=today.year)
+        payees_annee = qs_annee.filter(statut=Cotisation.Statut.PAYE).count()
+
+        return Response({
+            'mois_en_cours': {
+                'payees': payees_mois,
+                'total': total_semaines_mois,
+                'pourcentage': round(payees_mois / total_semaines_mois * 100),
+            },
+            'cumul_annuel': {
+                'payees': payees_annee,
+                'total_attendu': 48,
+            },
+        })
