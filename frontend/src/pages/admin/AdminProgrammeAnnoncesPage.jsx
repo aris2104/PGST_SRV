@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Header from '../../components/layout/Header'
 import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
@@ -9,6 +10,9 @@ export default function AdminProgrammeAnnoncesPage() {
   const [programme, setProgramme] = useState([])
   const [annonces, setAnnonces] = useState([])
   const [loading, setLoading] = useState(true)
+  const [searchParams] = useSearchParams()
+  const highlightId = searchParams.get('annonce')
+  const highlightRefs = useRef({})
 
   useEffect(() => {
     Promise.all([
@@ -20,6 +24,12 @@ export default function AdminProgrammeAnnoncesPage() {
       setLoading(false)
     })
   }, [])
+
+  useEffect(() => {
+    if (!highlightId || loading) return
+    const el = highlightRefs.current[highlightId]
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [highlightId, loading, annonces])
 
   return (
     <div>
@@ -47,19 +57,26 @@ export default function AdminProgrammeAnnoncesPage() {
           <EmptyState title="Aucune annonce publiée" />
         )}
         <div className="flex flex-col gap-3">
-          {annonces.map((a) => (
-            <Card key={a.id}>
-              <div className="flex items-center justify-between mb-1.5">
-                <Badge tone={a.portee === 'CIBLEE' ? 'accent' : 'info'}>
-                  {a.portee === 'CIBLEE' ? 'pour toi' : 'Générale'}
-                </Badge>
-                <p className="text-xs text-neutral-400">
-                  {new Date(a.date_publication).toLocaleDateString('fr-FR')}
-                </p>
-              </div>
-              <p className="font-bold text-sm">{a.contenu}</p>
-            </Card>
-          ))}
+          {annonces.map((a) => {
+            const estCible = String(a.id) === highlightId
+            return (
+              <Card
+                key={a.id}
+                ref={(el) => { highlightRefs.current[a.id] = el }}
+                className={`transition-colors duration-700 ${estCible ? 'bg-info/10' : ''}`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <Badge tone={a.portee === 'CIBLEE' ? 'accent' : 'info'}>
+                    {a.portee === 'CIBLEE' ? 'pour toi' : 'Générale'}
+                  </Badge>
+                  <p className="text-xs text-neutral-400">
+                    {new Date(a.date_publication).toLocaleDateString('fr-FR')}
+                  </p>
+                </div>
+                <p className="font-bold text-sm">{a.contenu}</p>
+              </Card>
+            )
+          })}
         </div>
       </div>
     </div>

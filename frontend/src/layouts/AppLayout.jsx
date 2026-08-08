@@ -3,12 +3,12 @@ import BottomNavigation from '../components/layout/BottomNavigation'
 
 export default function AppLayout() {
   return (
-    <div className="fixed inset-0 bg-surface flex justify-center overflow-y-auto">
+    <div className="min-h-dvh bg-surface flex justify-center">
       <div
         className="w-full max-w-md bg-surface relative"
         style={{
-          minHeight: '100%',
-          paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))',
+          minHeight: '100dvh',
+          paddingBottom: 'calc(4rem + 1rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <Outlet />

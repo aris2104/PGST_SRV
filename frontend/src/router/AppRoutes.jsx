@@ -1,63 +1,84 @@
+import { lazy, Suspense } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
-
 import AuthLayout from '../layouts/AuthLayout'
 import AppLayout from '../layouts/AppLayout'
-
-import WelcomePage from '../pages/auth/WelcomePage'
-import LoginPage from '../pages/auth/LoginPage'
-
-import HomePage from '../pages/home/HomePage'
-import CalendarPage from '../pages/calendar/CalendarPage'
-
-import SuivisDashboard from '../pages/suivis/SuivisDashboard'
-import SanctionHistoryPage from '../pages/suivis/SanctionHistoryPage'
-import CotisationDetailPage from '../pages/suivis/CotisationDetailPage'
-
-// --- Settings ---
-import SettingsPage from '../pages/settings/SettingsPage'
-import EditProfilePage from '../pages/settings/EditProfilePage'
-import NotificationsPage from '../pages/settings/NotificationsPage'
-import ConfidentialitePage from '../pages/settings/ConfidentialitePage'
-import AidePage from '../pages/settings/AidePage'
-import ContactAdminPage from '../pages/settings/ContactAdminPage'
-
-// --- Presi & Secré ---
-import PublierAnnoncePage from '../pages/roles-dashboards/PublierAnnoncePage'
-import PlanifierProgrammePage from '../pages/organisateur/PlanifierProgrammePage'
-
-// --- Disciplinaire ---
-import DisciplinaireSanctionsPage from '../pages/disciplinaire/DisciplinaireSanctionsPage'
-import EnregistrerSanctionPage from '../pages/disciplinaire/EnregistrerSanctionPage'
-
-// --- Trésorerie ---
-import TresorCaissePage from '../pages/tresor/TresorCaissePage'
-import TresorImpayesPage from '../pages/tresor/TresorImpayesPage'
-import EnregistrerPaiementPage from '../pages/tresor/EnregistrerPaiementPage'
-
-// --- Organisation ---
-import EnregistrerOrdreDuJourPage from '../pages/organisateur/EnregistrerOrdreDuJourPage'
-
-// --- Dashboards & Admin ---
-import PresiSecreDashboard from '../pages/roles-dashboards/PresiSecreDashboard'
-import TresorDashboard from '../pages/roles-dashboards/TresorDashboard'
-import DisciplinaireDashboard from '../pages/roles-dashboards/DisciplinaireDashboard'
-import OrganisateurDashboard from '../pages/roles-dashboards/OrganisateurDashboard'
-import AdminDashboard from '../pages/roles-dashboards/AdminDashboard'
-import AdminGroupPage from '../pages/admin/AdminGroupPage'
-import AdminCaissePage from '../pages/admin/AdminCaissePage'
-import AdminSanctionsPage from '../pages/admin/AdminSanctionsPage'
-import AdminProgrammeAnnoncesPage from '../pages/admin/AdminProgrammeAnnoncesPage'
-import AdminActivitePage from '../pages/admin/AdminActivitePage'
-import PresencesPage from '../pages/suivis/PresencesPage'
-
-import AddMemberPage from '../pages/members/AddMemberPage'
-
 import { ROLES } from '../utils/constants'
+
+// Chargement différé : chaque page n'est téléchargée que lorsqu'elle
+// est réellement visitée. Le prefetch sur la nav (voir BottomNavigation)
+// précharge les 4 onglets principaux au survol/touch pour une nav instantanée.
+
+// Auth
+const WelcomePage = lazy(() => import('../pages/auth/WelcomePage'))
+const LoginPage = lazy(() => import('../pages/auth/LoginPage'))
+
+// App (onglets)
+const HomePage = lazy(() => import('../pages/home/HomePage'))
+const CalendarPage = lazy(() => import('../pages/calendar/CalendarPage'))
+const SuivisDashboard = lazy(() => import('../pages/suivis/SuivisDashboard'))
+const SettingsPage = lazy(() => import('../pages/settings/SettingsPage'))
+
+// Suivis
+const SanctionHistoryPage = lazy(() => import('../pages/suivis/SanctionHistoryPage'))
+const CotisationDetailPage = lazy(() => import('../pages/suivis/CotisationDetailPage'))
+const PresencesPage = lazy(() => import('../pages/suivis/PresencesPage'))
+
+// Settings
+const EditProfilePage = lazy(() => import('../pages/settings/EditProfilePage'))
+const ProfilPage = lazy(() => import('../pages/settings/ProfilPage'))
+const NotificationsPage = lazy(() => import('../pages/settings/NotificationsPage'))
+const ConfidentialitePage = lazy(() => import('../pages/settings/ConfidentialitePage'))
+const AidePage = lazy(() => import('../pages/settings/AidePage'))
+const ContactAdminPage = lazy(() => import('../pages/settings/ContactAdminPage'))
+
+// Presi & Secré
+const PublierAnnoncePage = lazy(() => import('../pages/roles-dashboards/PublierAnnoncePage'))
+const PlanifierProgrammePage = lazy(() => import('../pages/organisateur/PlanifierProgrammePage'))
+const EnregistrerPresencePage = lazy(() => import('../pages/presi-secre/EnregistrerPresencePage'))
+
+// Disciplinaire
+const DisciplinaireSanctionsPage = lazy(() => import('../pages/disciplinaire/DisciplinaireSanctionsPage'))
+const EnregistrerSanctionPage = lazy(() => import('../pages/disciplinaire/EnregistrerSanctionPage'))
+
+// Trésorerie
+const TresorCaissePage = lazy(() => import('../pages/tresor/TresorCaissePage'))
+const TresorImpayesPage = lazy(() => import('../pages/tresor/TresorImpayesPage'))
+const EnregistrerPaiementPage = lazy(() => import('../pages/tresor/EnregistrerPaiementPage'))
+const NouveauMouvementPage = lazy(() => import('../pages/tresor/NouveauMouvementPage'))
+const MouvementsPage = lazy(() => import('../pages/tresor/MouvementsPage'))
+const ConfirmationsSortiesPage = lazy(() => import('../pages/caisse/ConfirmationsSortiesPage'))
+
+// Organisation
+const EnregistrerOrdreDuJourPage = lazy(() => import('../pages/organisateur/EnregistrerOrdreDuJourPage'))
+
+// Dashboards & Admin
+const PresiSecreDashboard = lazy(() => import('../pages/roles-dashboards/PresiSecreDashboard'))
+const TresorDashboard = lazy(() => import('../pages/roles-dashboards/TresorDashboard'))
+const DisciplinaireDashboard = lazy(() => import('../pages/roles-dashboards/DisciplinaireDashboard'))
+const OrganisateurDashboard = lazy(() => import('../pages/roles-dashboards/OrganisateurDashboard'))
+const AdminDashboard = lazy(() => import('../pages/roles-dashboards/AdminDashboard'))
+const AdminGroupPage = lazy(() => import('../pages/admin/AdminGroupPage'))
+const AdminCaissePage = lazy(() => import('../pages/admin/AdminCaissePage'))
+const AdminSanctionsPage = lazy(() => import('../pages/admin/AdminSanctionsPage'))
+const AdminProgrammeAnnoncesPage = lazy(() => import('../pages/admin/AdminProgrammeAnnoncesPage'))
+const AdminActivitePage = lazy(() => import('../pages/admin/AdminActivitePage'))
+const RapportPage = lazy(() => import('../pages/admin/RapportPage'))
+const AddMemberPage = lazy(() => import('../pages/members/AddMemberPage'))
+
+// Fallback spinner identique au splash screen
+function PageLoader() {
+  return (
+    <div className="min-h-dvh flex items-center justify-center" style={{ background: '#24365A' }}>
+      <div className="w-10 h-10 rounded-full border-[3px] border-white/25 border-t-white animate-spin" />
+    </div>
+  )
+}
 
 export default function AppRoutes() {
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       {/* --- Authentification --- */}
       <Route element={<AuthLayout />}>
@@ -85,6 +106,7 @@ export default function AppRoutes() {
         {/* --- Paramètres --- */}
         <Route path="/parametres" element={<SettingsPage />} />
         <Route path="/parametres/profil" element={<EditProfilePage />} />
+        <Route path="/parametres/mon-profil" element={<ProfilPage />} />
         <Route path="/parametres/notifications" element={<NotificationsPage />} />
         <Route path="/parametres/confidentialite" element={<ConfidentialitePage />} />
         <Route path="/parametres/aide" element={<AidePage />} />
@@ -117,6 +139,15 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/presi-secre/appel"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN]}>
+              <EnregistrerPresencePage />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* --- Sous-page Organisateur : uniquement l'ordre du jour --- */}
         <Route
@@ -168,6 +199,30 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN]}>
               <EnregistrerPaiementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tresor/mouvements"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN]}>
+              <MouvementsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tresor/mouvements/nouveau"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN]}>
+              <NouveauMouvementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/caisse/confirmations"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.DISCIPLINAIRE, ROLES.ORGANISATEUR, ROLES.ADMIN]}>
+              <ConfirmationsSortiesPage />
             </ProtectedRoute>
           }
         />
@@ -242,7 +297,7 @@ export default function AppRoutes() {
         <Route
           path="/admin/programme-annonces"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.TRESORIER, ROLES.DISCIPLINAIRE, ROLES.ORGANISATEUR]}>
               <AdminProgrammeAnnoncesPage />
             </ProtectedRoute>
           }
@@ -255,10 +310,19 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/rapport"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.TRESORIER]}>
+              <RapportPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       <Route path="*" element={<CatchAll />} />
     </Routes>
+    </Suspense>
   )
 }
 

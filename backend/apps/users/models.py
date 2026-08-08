@@ -66,3 +66,25 @@ class NotificationPreference(models.Model):
 
     def __str__(self):
         return f"Préférences de {self.servant.nom_complet}"
+
+
+class PushSubscription(models.Model):
+    """
+    Abonnement Web Push d'un servant (navigateur/appareil).
+    Un servant peut enregistrer plusieurs appareils (ex: son téléphone et son PC).
+    """
+    servant = models.ForeignKey(
+        'users.User', on_delete=models.CASCADE, related_name='push_subscriptions'
+    )
+    endpoint = models.TextField()
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Souscription Push'
+        verbose_name_plural = 'Souscriptions Push'
+        unique_together = ('servant', 'endpoint')
+
+    def __str__(self):
+        return f"Push {self.servant.nom_complet} - {self.endpoint[:30]}..."

@@ -21,8 +21,8 @@ export const adminService = {
     return data
   },
 
-  async getActiviteRecente() {
-    const { data } = await api.get('/activite/recente/')
+  async getActiviteRecente(page = 1, pageSize = 30) {
+    const { data } = await api.get('/activite/recente/', { params: { page, page_size: pageSize } })
     return data
   },
 

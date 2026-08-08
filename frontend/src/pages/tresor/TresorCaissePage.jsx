@@ -52,6 +52,12 @@ export default function TresorCaissePage() {
         <Card onClick={() => navigate('/tresor/impayes')} className="mb-3">
           <p className="font-bold text-sm">Voir les impayés</p>
         </Card>
+        <Card onClick={() => navigate('/suivis/cotisation')} className="mb-3">
+          <p className="font-bold text-sm">Voir le tableau complet du mois</p>
+        </Card>
+        <Card onClick={() => navigate('/tresor/mouvements')} className="mb-3">
+          <p className="font-bold text-sm">Mouvements de caisse</p>
+        </Card>
         <Card onClick={() => navigate('/tresor/enregistrer-paiement')}>
           <p className="font-bold text-sm">Enregistrer un paiement</p>
         </Card>

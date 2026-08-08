@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Header from '../../components/layout/Header'
-import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
+import Table from '../../components/ui/Table'
 import EmptyState from '../../components/common/EmptyState'
 import { cotisationService } from '../../services/cotisationService'
 
@@ -40,24 +40,29 @@ export default function TresorImpayesPage() {
         {!loading && impayees.length === 0 && (
           <EmptyState title="Aucun impayé ce mois-ci" description="La caisse est à jour." />
         )}
-        <div className="flex flex-col gap-3">
-          {impayees.map((c) => (
-            <Card key={c.id} className="flex items-center justify-between gap-3">
-              <div>
-                <p className="font-bold text-sm">{c.servant_nom ?? `Servant #${c.servant}`}</p>
-                <p className="text-xs text-neutral-500">Semaine {c.numero_semaine}</p>
-              </div>
-              <Button
-                variant="secondary"
-                className="w-auto px-4"
-                disabled={savingId === c.id}
-                onClick={() => handleMarquerPaye(c.id)}
-              >
-                {savingId === c.id ? '...' : 'Marquer payé'}
-              </Button>
-            </Card>
-          ))}
-        </div>
+        {!loading && impayees.length > 0 && (
+          <Table
+            columns={[
+              { key: 'servant', label: 'Servant', render: (c) => c.servant_nom ?? `Servant #${c.servant}` },
+              { key: 'semaine', label: 'Semaine', render: (c) => `Semaine ${c.numero_semaine}` },
+              {
+                key: 'action',
+                label: '',
+                render: (c) => (
+                  <Button
+                    variant="secondary"
+                    className="w-auto px-3 py-1.5 text-xs"
+                    disabled={savingId === c.id}
+                    onClick={() => handleMarquerPaye(c.id)}
+                  >
+                    {savingId === c.id ? '...' : 'Marquer payé'}
+                  </Button>
+                ),
+              },
+            ]}
+            rows={impayees}
+          />
+        )}
       </div>
     </div>
   )

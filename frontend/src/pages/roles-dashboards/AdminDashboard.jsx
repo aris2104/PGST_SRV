@@ -13,10 +13,12 @@ export default function AdminDashboard() {
 
       <div className="px-5 py-5">
         <DashboardActionButton label="Administrer le groupe" onClick={() => navigate('/admin/groupe')} />
-        <DashboardActionButton label="Voir la caisse" onClick={() => navigate('/admin/caisse')} />
+        <DashboardActionButton label="Voir la caisse" onClick={() => navigate('/suivis/cotisation')} />
         <DashboardActionButton label="Sanctions" onClick={() => navigate('/admin/sanctions')} />
         <DashboardActionButton label="Programme & annonces" onClick={() => navigate('/admin/programme-annonces')} />
         <DashboardActionButton label="Activité" onClick={() => navigate('/admin/activite')} />
+        <DashboardActionButton label="Rapport complet" onClick={() => navigate('/rapport')} />
+        <DashboardActionButton label="Messages reçus" onClick={() => navigate('/parametres/contact-admin')} />
       </div>
     </div>
   )

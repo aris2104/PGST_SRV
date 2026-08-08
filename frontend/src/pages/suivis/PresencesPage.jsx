@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import BoutonPDF from '../../components/ui/BoutonPDF'
 import Header from '../../components/layout/Header'
 import Card from '../../components/ui/Card'
 import { calendarService } from '../../services/calendarService'
@@ -49,53 +50,81 @@ export default function PresencesPage() {
     })
   }, [])
 
-  // Helper pour trouver le statut d'un membre à une réunion donnée
-  const getStatusFor = (servantId, odjId) => {
-    const p = presences.find((item) => {
+  // Map indexée O(1) pour l'accès immédiat aux présences (servantId_odjId)
+  const presenceMap = useMemo(() => {
+    const map = new Map()
+    presences.forEach((item) => {
       const pOdjId = typeof item.ordre_du_jour === 'object' ? item.ordre_du_jour?.id : item.ordre_du_jour
       const pServantId = typeof item.servant === 'object' ? item.servant?.id : item.servant
-      return Number(pOdjId) === Number(odjId) && Number(pServantId) === Number(servantId)
+      if (pServantId && pOdjId) {
+        map.set(`${pServantId}_${pOdjId}`, item)
+      }
     })
+    return map
+  }, [presences])
 
+  // Helper O(1) pour obtenir le statut d'un membre à une réunion
+  const getStatusFor = useCallback((servantId, odjId) => {
+    const p = presenceMap.get(`${servantId}_${odjId}`)
     if (!p) return null
     if (p.statut && STATUTS[p.statut.toUpperCase()]) return STATUTS[p.statut.toUpperCase()]
     if (p.present === true) return STATUTS.PRESENT
     if (p.present === false) return STATUTS.ABSENT
     return null
-  }
+  }, [presenceMap])
 
-  // Calcul du taux d'assiduité d'un membre spécifique
-  const getServantStats = (servantId) => {
-    let p = 0, r = 0, perm = 0, a = 0
-    ordresDuJour.forEach((odj) => {
-      const st = getStatusFor(servantId, odj.id)
-      if (st?.id === 'PRESENT') p++
-      else if (st?.id === 'RETARD') r++
-      else if (st?.id === 'PERMISSION') perm++
-      else if (st?.id === 'ABSENT') a++
-    })
+  // Map de calcul pré-agrégé des stats par membre
+  const statsMap = useMemo(() => {
+    const map = new Map()
     const total = ordresDuJour.length
-    const percent = total > 0 ? Math.round(((p + r) / total) * 100) : 0
-    return { percent, p, r, perm, a, total }
-  }
 
-  // Stats pour l'utilisateur actuellement connecté (cartes du haut)
+    servants.forEach((s) => {
+      let p = 0, r = 0, perm = 0, a = 0
+      ordresDuJour.forEach((odj) => {
+        const st = getStatusFor(s.id, odj.id)
+        if (st?.id === 'PRESENT') p++
+        else if (st?.id === 'RETARD') r++
+        else if (st?.id === 'PERMISSION') perm++
+        else if (st?.id === 'ABSENT') a++
+      })
+      const percent = total > 0 ? Math.round(((p + r) / total) * 100) : 0
+      map.set(Number(s.id), { percent, p, r, perm, a, total })
+    })
+
+    return map
+  }, [servants, ordresDuJour, getStatusFor])
+
+  // Stats perso pour les cartes synthétiques
   const myStats = useMemo(() => {
     if (!user) return { percent: 0, total: 0, p: 0, r: 0, perm: 0, a: 0 }
-    return getServantStats(user.id)
-  }, [user, ordresDuJour, presences])
+    return statsMap.get(Number(user.id)) || { percent: 0, total: ordresDuJour.length, p: 0, r: 0, perm: 0, a: 0 }
+  }, [user, statsMap, ordresDuJour.length])
+
+  // Filtrage des membres selon le rôle (Bureau ou Membre unique)
+  const displayedServants = useMemo(() => {
+    if (isBureau) return servants
+    return servants.filter((s) => Number(s.id) === Number(user?.id))
+  }, [servants, isBureau, user])
 
   return (
     <div className="min-h-screen bg-[#F4F3EF] pb-10">
-      <Header subtitle="Registre annuel" title="Présences aux réunions" />
+      <Header subtitle="Registre annuel" title="Présences aux réunions" showBack />
 
-      <div className="px-4 py-5 space-y-4 max-w-4xl mx-auto">
-        
-        {/* SYNTHÈSE PERSO / GLOBALE (4 Cartes du haut) */}
+      <div className="flex items-center justify-between px-5 pt-5 pb-2">
+        <h2 className="font-extrabold text-lg">Registre des présences</h2>
+        {!loading && (
+          <BoutonPDF zone="presences" titre="Présences aux réunions" />
+        )}
+      </div>
+
+      <div id="pdf-zone-presences" className="px-4 py-3 space-y-4 max-w-4xl mx-auto">
+        {/* SYNTHÈSE PERSO / GLOBALE */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="p-3 bg-white border border-neutral-200">
             <p className="text-[10px] font-extrabold text-neutral-400 uppercase">Assiduité Globale</p>
-            <p className="text-xl font-black text-emerald-600 mt-1">{myStats.percent}%</p>
+            <p className="text-xl font-black text-emerald-600 mt-1">
+              {myStats.p + myStats.r}/{myStats.total}
+            </p>
           </Card>
           <Card className="p-3 bg-white border border-neutral-200">
             <p className="text-[10px] font-extrabold text-neutral-400 uppercase">Présences / Retards</p>
@@ -136,12 +165,10 @@ export default function PresencesPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-neutral-100 border-b border-neutral-200 text-[11px] font-extrabold text-neutral-500 uppercase">
-                      {/* Colonne membre fixe */}
                       <th className="sticky left-0 bg-neutral-100 p-3 z-20 min-w-[140px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                         Membres
                       </th>
 
-                      {/* Liste des réunions */}
                       {ordresDuJour.map((odj) => (
                         <th key={odj.id} className="p-3 text-center min-w-[80px] whitespace-nowrap">
                           <span className="block text-neutral-800">{formatDateShort(odj.date)}</span>
@@ -151,23 +178,20 @@ export default function PresencesPage() {
                         </th>
                       ))}
 
-                      {/* Nouvelle Colonne Taux d'assiduité */}
                       <th className="p-3 text-center min-w-[70px] bg-neutral-100 text-neutral-700">
                         Taux
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100 text-xs">
-                    {(isBureau ? servants : servants.filter(s => Number(s.id) === Number(user?.id))).map((s) => {
-                      const stats = getServantStats(s.id)
+                    {displayedServants.map((s) => {
+                      const stats = statsMap.get(Number(s.id)) || { percent: 0, p: 0, r: 0, total: ordresDuJour.length }
                       return (
                         <tr key={s.id} className="hover:bg-neutral-50/80 transition">
-                          {/* Nom du membre */}
                           <td className="sticky left-0 bg-white p-3 font-bold text-neutral-800 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] whitespace-nowrap">
                             {s.nom_complet || s.username}
                           </td>
 
-                          {/* Statut pour chaque date */}
                           {ordresDuJour.map((odj) => {
                             const st = getStatusFor(s.id, odj.id)
                             return (
@@ -186,10 +210,9 @@ export default function PresencesPage() {
                             )
                           })}
 
-                          {/* Taux calculé pour le membre */}
                           <td className="p-2 text-center font-black bg-neutral-50/50">
                             <span className={stats.percent >= 75 ? 'text-emerald-600' : stats.percent >= 50 ? 'text-amber-600' : 'text-rose-600'}>
-                              {stats.percent}%
+                              {stats.p + stats.r}/{stats.total}
                             </span>
                           </td>
                         </tr>
@@ -199,7 +222,7 @@ export default function PresencesPage() {
                 </table>
               </div>
 
-              {/* LÉGENDE DU TABLEAU */}
+              {/* LÉGENDE */}
               <div className="p-3 bg-neutral-50 border-t border-neutral-200 flex flex-wrap items-center justify-center gap-4 text-[11px] font-bold text-neutral-600">
                 <span className="flex items-center gap-1.5">
                   <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-[9px]">P</span> Présent

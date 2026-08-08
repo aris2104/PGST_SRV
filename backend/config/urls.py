@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/cotisations/', include('apps.cotisations.urls')),
     path('api/calendrier/', include('apps.calendrier.urls')),
     path('api/annonces/', include('apps.annonces.urls')),
+    path('api/caisse/', include('apps.caisse.urls')),
 ]
 
 if settings.DEBUG:

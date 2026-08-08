@@ -7,7 +7,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      // Indispensable pour activer la PWA en mode dev / tunnel
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js',
       devOptions: {
         enabled: true,
         type: 'module',
@@ -22,20 +24,11 @@ export default defineConfig({
         display: 'standalone',
         scope: '/',
         start_url: '/',
-        icons: [
-          {
-            src: '/pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable',
-          },
-          {
-            src: '/pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable',
-          },
-        ],
+icons: [
+  { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+  { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+  { src: '/icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+],
       },
     }),
   ],

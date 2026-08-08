@@ -36,6 +36,10 @@ export default function PresiSecreDashboard() {
           label="Publier une annonce" 
           onClick={() => navigate('/presi-secre/publier-annonce')} 
         />
+        <DashboardActionButton
+          label="Faire l'appel"
+          onClick={() => navigate('/presi-secre/appel')}
+        />
       </div>
     </div>
   )

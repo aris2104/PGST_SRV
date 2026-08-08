@@ -124,16 +124,10 @@ export default function PlanifierProgrammePage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-12">
-      <Header title="Planifier un Service de Messe" />
+      <Header title="Planifier un Service de Messe" showBack />
 
       <div className="max-w-xl mx-auto p-4">
-        {/* Bouton retour */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 mb-4 font-semibold"
-        >
-          <ArrowLeft size={18} /> Retour au Dashboard
-        </button>
+        
 
         {/* Message de confirmation */}
         {successMsg && (

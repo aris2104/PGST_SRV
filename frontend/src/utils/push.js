@@ -52,7 +52,7 @@ export async function subscribeUserToPush() {
     // 6. Envoyer l'abonnement à notre API Django via notre service axios sécurisé
     // (Assure-toi d'importer ton instance api depuis ton service)
     const { default: api } = await import('../services/api');
-    await api.post('/api/notifications/subscribe/', subscriptionData);
+    await api.post('/users/push-subscriptions/', subscriptionData);
 
     console.log("Abonnement aux notifications push réussi !");
     return true;

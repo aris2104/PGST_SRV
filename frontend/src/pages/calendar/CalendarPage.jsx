@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RotateCcw } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import Card from '../../components/ui/Card'
@@ -190,11 +191,16 @@ function ProgrammeRow({ messe, onClick }) {
    PAGE PRINCIPALE
    ========================================== */
 export default function CalendarPage() {
+  const [searchParams] = useSearchParams()
+  const highlightOdjId = searchParams.get('odj')
+  const highlightRefs = useRef({})
+
   // Date de référence (par défaut aujourd'hui)
   const [currentDate, setCurrentDate] = useState(new Date())
 
   const [mesMesses, setMesMesses] = useState([])
   const [programme, setProgramme] = useState([])
+  const [ordresDuJour, setOrdresDuJour] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedMesse, setSelectedMesse] = useState(null)
 
@@ -222,12 +228,27 @@ export default function CalendarPage() {
     Promise.all([
       calendarService.getMesMesses(dateParam).catch(() => []),
       calendarService.getProgrammeSemaine(dateParam).catch(() => []),
-    ]).then(([mes, prog]) => {
+      calendarService.getOrdresDuJour().catch(() => []),
+    ]).then(([mes, prog, odj]) => {
       setMesMesses(mes)
       setProgramme(prog)
+      setOrdresDuJour(odj)
       setLoading(false)
     })
   }, [currentDate])
+
+  // Ordres du jour de la semaine actuellement affichée
+  const dimancheCourant = addJours(lundiCourant, 6)
+  const odjDeLaSemaine = ordresDuJour.filter((o) => {
+    const d = new Date(o.date)
+    return d >= lundiCourant && d <= dimancheCourant
+  })
+
+  useEffect(() => {
+    if (!highlightOdjId || loading) return
+    const el = highlightRefs.current[highlightOdjId]
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [highlightOdjId, loading, ordresDuJour])
 
   return (
     <div>
@@ -319,6 +340,43 @@ export default function CalendarPage() {
               programme.map((m) => (
                 <ProgrammeRow key={m.id} messe={m} onClick={() => setSelectedMesse(m)} />
               ))}
+          </Card>
+        </div>
+        {/* SECTION 3 : Ordre du jour de la semaine */}
+        <div>
+          <h2 className="text-danger font-extrabold mb-3">Ordre du jour</h2>
+          <Card>
+            {loading && <p className="text-neutral-400 text-sm py-2">Chargement...</p>}
+            {!loading && odjDeLaSemaine.length === 0 && (
+              <p className="text-neutral-400 text-sm py-2">
+                Aucun ordre du jour publié pour cette semaine.
+              </p>
+            )}
+            {!loading &&
+              odjDeLaSemaine.map((o) => {
+                const { jour, numero } = formatJourNumero(o.date)
+                const estCible = String(o.id) === highlightOdjId
+                return (
+                  <div
+                    key={o.id}
+                    ref={(el) => { highlightRefs.current[o.id] = el }}
+                    className={`flex items-start gap-3 py-3 px-2 -mx-2 rounded-lg border-b border-neutral-200 last:border-0 transition-colors duration-700 ${
+                      estCible ? 'bg-info/10' : ''
+                    }`}
+                  >
+                    <div className="text-center w-10 flex-shrink-0">
+                      <p className="text-info text-xs font-bold">{jour}</p>
+                      <p className="font-extrabold text-lg leading-none">{numero}</p>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-sm">{o.titre}</p>
+                      {o.description && (
+                        <p className="text-xs text-neutral-500 mt-0.5">{o.description}</p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
           </Card>
         </div>
       </div>

@@ -10,11 +10,12 @@ MOIS_FR = [
 class CotisationSerializer(serializers.ModelSerializer):
     statut_display = serializers.CharField(source='get_statut_display', read_only=True)
     mois_libelle = serializers.SerializerMethodField()
+    servant_nom = serializers.CharField(source='servant.nom_complet', read_only=True)
 
     class Meta:
         model = Cotisation
         fields = [
-            'id', 'servant', 'annee', 'mois', 'mois_libelle', 'numero_semaine',
+            'id', 'servant', 'servant_nom', 'annee', 'mois', 'mois_libelle', 'numero_semaine',
             'date_debut_semaine', 'montant', 'statut', 'statut_display',
             'date_paiement', 'enregistree_par',
         ]

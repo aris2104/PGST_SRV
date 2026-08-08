@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { UserPlus } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import Button from '../../components/ui/Button'
+import Table from '../../components/ui/Table'
 import EmptyState from '../../components/common/EmptyState'
 import { adminService } from '../../services/adminService'
 
@@ -68,47 +69,61 @@ export default function AdminGroupPage() {
           <EmptyState title="Aucun membre enregistré" />
         )}
 
-        <div className="flex flex-col gap-3">
-          {membres.map((m) => (
-            <div key={m.id} className="bg-white rounded-card shadow-card p-4">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-neutral-300 flex items-center justify-center font-bold text-sm text-neutral-700 flex-shrink-0">
-                    {m.initiales}
+        {!loading && membres.length > 0 && (
+          <Table
+            stickyFirstColumn
+            columns={[
+              {
+                key: 'membre',
+                label: 'Membre',
+                render: (m) => (
+                  <div className="flex items-center gap-2 min-w-[130px]">
+                    <div className="w-8 h-8 rounded-full bg-neutral-300 flex items-center justify-center font-bold text-xs text-neutral-700 flex-shrink-0">
+                      {m.initiales}
+                    </div>
+                    <div>
+                      <p className="font-bold text-xs leading-tight">{m.nom_complet}</p>
+                      <p className="text-[11px] text-neutral-500">{m.matricule}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-sm">{m.nom_complet}</p>
-                    <p className="text-xs text-neutral-500">{m.matricule}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleToggleActif(m.id, m.is_active)}
-                  disabled={savingId === m.id}
-                  className={`text-[11px] font-bold uppercase px-2.5 py-1 rounded-full flex-shrink-0 ${
-                    m.is_active ? 'text-success bg-success/10' : 'text-danger bg-danger/10'
-                  }`}
-                >
-                  {m.is_active ? 'Actif' : 'Désactivé'}
-                </button>
-              </div>
-
-              <label className="block">
-                <span className="block mb-1 text-xs font-semibold text-neutral-500">Rôle</span>
-                <select
-                  value={m.role?.id ?? ''}
-                  disabled={savingId === m.id}
-                  onChange={(e) => handleRoleChange(m.id, e.target.value)}
-                  className="w-full px-3 py-2 rounded-md border border-neutral-300 text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-navy"
-                >
-                  <option value="">Aucun rôle</option>
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>{r.libelle}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          ))}
-        </div>
+                ),
+              },
+              {
+                key: 'role',
+                label: 'Rôle',
+                render: (m) => (
+                  <select
+                    value={m.role?.id ?? ''}
+                    disabled={savingId === m.id}
+                    onChange={(e) => handleRoleChange(m.id, e.target.value)}
+                    className="px-2 py-1.5 rounded-md border border-neutral-300 text-xs bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-navy"
+                  >
+                    <option value="">Aucun rôle</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>{r.libelle}</option>
+                    ))}
+                  </select>
+                ),
+              },
+              {
+                key: 'statut',
+                label: 'Statut',
+                render: (m) => (
+                  <button
+                    onClick={() => handleToggleActif(m.id, m.is_active)}
+                    disabled={savingId === m.id}
+                    className={`text-[11px] font-bold uppercase px-2.5 py-1 rounded-full whitespace-nowrap ${
+                      m.is_active ? 'text-success bg-success/10' : 'text-danger bg-danger/10'
+                    }`}
+                  >
+                    {m.is_active ? 'Actif' : 'Désactivé'}
+                  </button>
+                ),
+              },
+            ]}
+            rows={membres}
+          />
+        )}
       </div>
     </div>
   )

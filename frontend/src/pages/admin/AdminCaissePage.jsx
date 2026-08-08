@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Header from '../../components/layout/Header'
 import Card from '../../components/ui/Card'
+import Table from '../../components/ui/Table'
 import EmptyState from '../../components/common/EmptyState'
 import { cotisationService } from '../../services/cotisationService'
 import { MOIS_FR } from '../../utils/constants'
@@ -53,14 +54,17 @@ export default function AdminCaissePage() {
           <EmptyState title="Aucun impayé ce mois-ci" description="La caisse est à jour." />
         )}
         <div className="flex flex-col gap-2">
-          {impayees.map((c) => (
-            <Card key={c.id} className="flex items-center justify-between">
-              <p className="font-bold text-sm">{c.servant_nom ?? `Servant #${c.servant}`}</p>
-              <span className="text-xs font-bold text-danger uppercase">
-                Semaine {c.numero_semaine}
-              </span>
-            </Card>
-          ))}
+          {!loading && impayees.length > 0 && (
+            <Table
+              columns={[
+                { key: 'servant', label: 'Servant', render: (c) => c.servant_nom ?? `Servant #${c.servant}` },
+                { key: 'semaine', label: 'Semaine', render: (c) => (
+                  <span className="text-danger font-bold uppercase text-xs">Semaine {c.numero_semaine}</span>
+                ) },
+              ]}
+              rows={impayees}
+            />
+          )}
         </div>
       </div>
     </div>

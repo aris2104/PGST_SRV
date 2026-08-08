@@ -10,4 +10,10 @@ export const supportService = {
     const { data } = await api.post('/support/messages/', { sujet, contenu })
     return data
   },
+
+  /** Réservé à l'Admin */
+  async repondreMessage(id, reponse) {
+    const { data } = await api.patch(`/support/messages/${id}/`, { reponse })
+    return data
+  },
 }

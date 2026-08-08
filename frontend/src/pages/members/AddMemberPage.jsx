@@ -53,15 +53,10 @@ export default function AddMemberPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-10">
-      <Header title="Ajouter un membre" />
+      <Header title="Ajouter un membre" showBack />
 
       <div className="max-w-lg mx-auto p-5">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 mb-4 font-medium"
-        >
-          <ArrowLeft size={18} /> Retour
-        </button>
+        
 
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-sm border border-neutral-100">
           <label className="block mb-4">

@@ -35,7 +35,10 @@ export default function SettingsPage() {
       <Header title="Parametres" />
 
       <div className="px-5 py-5">
-        <div className="flex items-center gap-3 mb-8">
+        <button
+          onClick={() => navigate('/parametres/mon-profil')}
+          className="w-full flex items-center gap-3 mb-8 text-left"
+        >
           <Avatar initials={user?.initiales ?? '--'} />
           <div>
             <p className="font-extrabold">{user?.nom_complet ?? '—'}</p>
@@ -43,7 +46,7 @@ export default function SettingsPage() {
               Membre depuis {anneeAdhesion}
             </p>
           </div>
-        </div>
+        </button>
 
         <h2 className="font-extrabold mb-3">COMPTE</h2>
         <SettingsRow label="Modifier mes infos" onClick={() => navigate('/parametres/profil')} />
@@ -52,7 +55,9 @@ export default function SettingsPage() {
 
         <h2 className="font-extrabold mb-3 mt-8">SUPPORT</h2>
         <SettingsRow label="Aide" onClick={() => navigate('/parametres/aide')} />
-        <SettingsRow label="Contacter l'admin" onClick={() => navigate('/parametres/contact-admin')} />
+        {user?.role?.code !== 'ADMIN' && (
+          <SettingsRow label="Contacter l'admin" onClick={() => navigate('/parametres/contact-admin')} />
+        )}
 
         <div className="mt-8">
           <Button variant="danger" onClick={handleLogout}>

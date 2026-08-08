@@ -3,21 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+    
+    <!-- Couleurs d'interface et d'application -->
     <meta name="theme-color" content="#24365A" />
-    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="description" content="Plateforme de Gestion des Servants" />
+
+    <!-- Configuration Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Compatibilité iOS / Safari PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="PGST" />
-    <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Compatibilité Android / Chrome -->
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Icônes -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
     <title>PGST - Gestion des Servants</title>
-    <meta name="description" content="Plateforme de Gestion des Servants" />
   </head>
   <body class="bg-surface">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-
-
-

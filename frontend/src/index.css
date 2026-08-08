@@ -18,3 +18,9 @@ input, select, textarea {
 html, body, #root {
   min-height: 100dvh;
 }
+
+/* Empêche le rebond élastique de Safari iOS en fin de scroll, qui peut
+   entraîner les éléments "sticky" (le header) avec lui pendant l'animation. */
+html, body {
+  overscroll-behavior-y: none;
+}

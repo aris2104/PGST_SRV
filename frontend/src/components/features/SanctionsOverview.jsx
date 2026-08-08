@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import Card from '../ui/Card'
+import Table from '../ui/Table'
 import EmptyState from '../common/EmptyState'
 import { sanctionService } from '../../services/sanctionService'
 
@@ -11,6 +11,15 @@ const STATUT_STYLE = {
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function StatutBadge({ statut }) {
+  const s = STATUT_STYLE[statut] ?? STATUT_STYLE.PURGEE
+  return (
+    <span className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded-full ${s.className}`}>
+      {s.label}
+    </span>
+  )
 }
 
 export default function SanctionsOverview() {
@@ -35,38 +44,34 @@ export default function SanctionsOverview() {
       {!loading && actives.length === 0 && (
         <EmptyState title="Aucune sanction active" description="Le groupe est à jour." />
       )}
-      <div className="flex flex-col gap-3 mb-6">
-        {actives.map((s) => (
-          <Card key={s.id}>
-            <div className="flex items-center justify-between mb-1">
-              <p className="font-bold text-sm">{s.servant_nom ?? `Servant #${s.servant}`}</p>
-              <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full text-danger bg-danger/10">
-                Active
-              </span>
-            </div>
-            <p className="text-xs text-neutral-600 mb-1">{s.type_sanction_display}</p>
-            <p className="text-xs text-neutral-500">{s.motif}</p>
-          </Card>
-        ))}
-      </div>
+      {!loading && actives.length > 0 && (
+        <div className="mb-6">
+          <Table
+            columns={[
+              { key: 'servant', label: 'Servant', render: (s) => s.servant_nom ?? `Servant #${s.servant}` },
+              { key: 'type', label: 'Type', render: (s) => s.type_sanction_display },
+              { key: 'motif', label: 'Motif', render: (s) => s.motif },
+              { key: 'statut', label: 'Statut', render: (s) => <StatutBadge statut={s.statut} /> },
+            ]}
+            rows={actives}
+          />
+        </div>
+      )}
 
       <h2 className="font-extrabold mb-3">Historique</h2>
-      <div className="flex flex-col gap-2">
-        {autres.map((s) => {
-          const statut = STATUT_STYLE[s.statut] ?? STATUT_STYLE.PURGEE
-          return (
-            <Card key={s.id} className="flex items-center justify-between">
-              <div>
-                <p className="font-bold text-sm">{s.servant_nom ?? `Servant #${s.servant}`}</p>
-                <p className="text-xs text-neutral-500">{formatDate(s.date_decision)}</p>
-              </div>
-              <span className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded-full ${statut.className}`}>
-                {statut.label}
-              </span>
-            </Card>
-          )
-        })}
-      </div>
+      {!loading && autres.length === 0 && (
+        <EmptyState title="Aucun historique" description="Rien à afficher pour l'instant." />
+      )}
+      {!loading && autres.length > 0 && (
+        <Table
+          columns={[
+            { key: 'servant', label: 'Servant', render: (s) => s.servant_nom ?? `Servant #${s.servant}` },
+            { key: 'date', label: 'Date', render: (s) => formatDate(s.date_decision) },
+            { key: 'statut', label: 'Statut', render: (s) => <StatutBadge statut={s.statut} /> },
+          ]}
+          rows={autres}
+        />
+      )}
     </>
   )
 }

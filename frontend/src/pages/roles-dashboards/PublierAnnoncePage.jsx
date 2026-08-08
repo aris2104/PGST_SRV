@@ -1,122 +1,126 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import Header from '../../components/layout/Header'
+import Button from '../../components/ui/Button'
+import { calendarService } from '../../services/calendarService'
+import { adminService } from '../../services/adminService'
 
 export default function PublierAnnoncePage() {
-  const [annonce, setAnnonce] = useState({
-    titre: '',
-    categorie: 'Generale',
-    contenu: '',
-    urgente: false,
-  })
+  const navigate = useNavigate()
 
-  const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState({
+    titre: '',
+    contenu: '',
+    portee: 'GENERALE',
+    destinataire: '',
+  })
+  const [membres, setMembres] = useState([])
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setAnnonce((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
+  useEffect(() => {
+    adminService.getMembres().then(setMembres).catch(() => setMembres([]))
+  }, [])
+
+  const handleChange = (field) => (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
+    setForm((f) => ({ ...f, [field]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
+    setSaving(true)
+    setError('')
     setSuccess(false)
-
-    setTimeout(() => {
-      setLoading(false)
+    try {
+      const payload = {
+        titre: form.titre,
+        contenu: form.contenu,
+        portee: form.portee,
+      }
+      if (form.portee === 'CIBLEE' && form.destinataire) {
+        payload.destinataire = form.destinataire
+      }
+      await calendarService.creerAnnonce(payload)
       setSuccess(true)
-      setAnnonce({
-        titre: '',
-        categorie: 'Generale',
-        contenu: '',
-        urgente: false,
-      })
-    }, 800)
+      setForm({ titre: '', contenu: '', portee: 'GENERALE', destinataire: '' })
+    } catch {
+      setError("La publication de l'annonce a échoué. Vérifie les champs.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md border border-gray-100 mt-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">
-        Publier une Annonce Officielle
-      </h1>
+    <div>
+      <Header title="Publier une annonce" showBack />
 
-      {success && (
-        <div className="mb-4 p-4 text-green-700 bg-green-50 border border-green-200 rounded-lg">
-          L'annonce a été publiée avec succès !
-        </div>
-      )}
+      <form onSubmit={handleSubmit} className="px-5 py-5">
+        {success && (
+          <div className="mb-4 p-3 rounded-md text-success bg-success/10 text-sm font-semibold">
+            L'annonce a été publiée avec succès !
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Titre de l'annonce
-          </label>
+        <label className="block mb-4">
+          <span className="block mb-1.5 font-semibold text-sm text-neutral-700">Titre</span>
           <input
             type="text"
-            name="titre"
-            required
-            value={annonce.titre}
-            onChange={handleChange}
+            value={form.titre}
+            onChange={handleChange('titre')}
             placeholder="Ex: Réunion extraordinaire du bureau"
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full px-4 py-3 rounded-md bg-white border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-navy"
           />
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Catégorie
-          </label>
+        <label className="block mb-4">
+          <span className="block mb-1.5 font-semibold text-sm text-neutral-700">Portée</span>
           <select
-            name="categorie"
-            value={annonce.categorie}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            value={form.portee}
+            onChange={handleChange('portee')}
+            className="w-full px-4 py-3 rounded-md bg-white border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-navy"
           >
-            <option value="Generale">Générale</option>
-            <option value="Information">Information</option>
-            <option value="Urgent">Urgent</option>
-            <option value="Evénement">Événement</option>
+            <option value="GENERALE">Générale (tout le groupe)</option>
+            <option value="CIBLEE">Pour toi (un servant précis)</option>
           </select>
-        </div>
+        </label>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Contenu du message
+        {form.portee === 'CIBLEE' && (
+          <label className="block mb-4">
+            <span className="block mb-1.5 font-semibold text-sm text-neutral-700">Destinataire</span>
+            <select
+              value={form.destinataire}
+              onChange={handleChange('destinataire')}
+              required
+              className="w-full px-4 py-3 rounded-md bg-white border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-navy"
+            >
+              <option value="">Choisir un membre</option>
+              {membres.map((m) => (
+                <option key={m.id} value={m.id}>{m.nom_complet}</option>
+              ))}
+            </select>
           </label>
+        )}
+
+        <label className="block mb-4">
+          <span className="block mb-1.5 font-semibold text-sm text-neutral-700">Contenu du message</span>
           <textarea
-            name="contenu"
+            value={form.contenu}
+            onChange={handleChange('contenu')}
+            rows={5}
             required
-            rows="5"
-            value={annonce.contenu}
-            onChange={handleChange}
             placeholder="Rédigez le texte complet de votre annonce ici..."
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full px-4 py-3 rounded-md bg-white border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-navy resize-none"
           />
-        </div>
+        </label>
 
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="urgente"
-            name="urgente"
-            checked={annonce.urgente}
-            onChange={handleChange}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="urgente" className="text-sm font-medium text-gray-700">
-            Marquer comme annonce prioritaire / urgente
-          </label>
-        </div>
+        {error && <p className="text-danger text-sm font-medium mb-4">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition duration-200 disabled:opacity-50"
-        >
-          {loading ? 'Publication en cours...' : 'Publier l\'annonce'}
-        </button>
+        <Button type="submit" disabled={saving}>
+          {saving ? 'Publication en cours...' : "Publier l'annonce"}
+        </Button>
       </form>
     </div>
   )

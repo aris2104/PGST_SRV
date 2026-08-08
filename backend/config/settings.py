@@ -12,6 +12,10 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
 INSTALLED_APPS = [
+    # ASGI / WebSockets (Daphne doit être impérativement avant staticfiles)
+    'daphne',
+    'channels',
+
     'django.contrib.admin',
     'apps.activite',
     'django.contrib.auth',
@@ -20,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'apps.support',
+    'apps.caisse',
 
     # Tiers
     'rest_framework',
@@ -68,6 +73,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
+
+# --- Configuration WebSockets / Channels ------------------------------------
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 # --- Base de données -------------------------------------------------------
 DATABASES = {
@@ -132,10 +144,8 @@ SIMPLE_JWT = {
 
 # --- CORS ---------------------------------------------------------------------
 if DEBUG:
-    # En développement (DEBUG=True) : autorise toutes les origines (Cloudflare, mobile, etc.)
     CORS_ALLOW_ALL_ORIGINS = True
 else:
-    # En production (DEBUG=False) : strict, n'autorise que ce qui est défini dans .env / localhost
     CORS_ALLOWED_ORIGINS = config(
         'CORS_ALLOWED_ORIGINS',
         default='http://localhost:5173',
@@ -143,3 +153,8 @@ else:
     )
 
 CORS_ALLOW_CREDENTIALS = True
+
+# --- Web Push (VAPID) --------------------------------------------------------
+VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
+VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
+VAPID_ADMIN_EMAIL = config('VAPID_ADMIN_EMAIL', default='mailto:admin@pgst.com')

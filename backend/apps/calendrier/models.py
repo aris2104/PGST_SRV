@@ -40,6 +40,7 @@ class OrdreDuJour(models.Model):
     cree_par = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
     )
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
         verbose_name = 'Ordre du jour'
