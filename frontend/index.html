@@ -28,6 +28,26 @@
   </head>
   <body class="bg-surface">
     <div id="root"></div>
+    <div
+      id="splash"
+      style="
+        position: fixed; inset: 0; z-index: 9999;
+        display: flex; align-items: center; justify-content: center;
+        background: #24365A;
+      "
+    >
+      <div
+        style="
+          width: 40px; height: 40px; border-radius: 9999px;
+          border: 3px solid rgba(255,255,255,0.25);
+          border-top-color: #fff;
+          animation: pgst-spin 0.8s linear infinite;
+        "
+      ></div>
+    </div>
+    <style>
+      @keyframes pgst-spin { to { transform: rotate(360deg); } }
+    </style>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

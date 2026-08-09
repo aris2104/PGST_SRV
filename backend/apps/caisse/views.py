@@ -1,16 +1,31 @@
-from datetime import datetime
+from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.users.models import User
-from utils.permissions import IsAdmin, IsPresiOrSecretary
+from utils.permissions import IsAdmin, IsPresiOrSecretary, _has_role
 from .models import MouvementCaisse, ConfirmationMouvement
 from .serializers import MouvementCaisseSerializer, ConfirmationSerializer
 
 # Rôles "bureau" qui reçoivent une demande de confirmation pour chaque sortie.
 ROLES_BUREAU = {'PRESIDENT', 'SECRETAIRE', 'DISCIPLINAIRE', 'ORGANISATEUR', 'ADMIN'}
+
+
+class CanGererCaisse(permissions.BasePermission):
+    """Trésorier ou Admin : créer/modifier un mouvement de caisse."""
+    def has_permission(self, request, view):
+        return _has_role(request.user, 'TRESORIER', 'ADMIN')
+
+
+class IsBureau(permissions.BasePermission):
+    """Tout rôle responsable (pas un simple Servant) : consulter les mouvements."""
+    def has_permission(self, request, view):
+        return _has_role(
+            request.user,
+            'PRESIDENT', 'SECRETAIRE', 'TRESORIER', 'DISCIPLINAIRE', 'ORGANISATEUR', 'ADMIN',
+        )
 
 
 def _creer_confirmations(mouvement, initiateur):
@@ -41,9 +56,13 @@ class MouvementCaisseViewSet(viewsets.ModelViewSet):
     serializer_class = MouvementCaisseSerializer
 
     def get_permissions(self):
+        # Créer/modifier un mouvement : Trésorier (c'est son rôle premier) ou Admin.
+        # Bug corrigé : IsPresiOrSecretary ne couvrait pas TRESORIER, ce qui bloquait
+        # la création de mouvement pour la personne censée l'utiliser le plus.
         if self.action in ('create', 'update', 'partial_update', 'destroy'):
-            return [permissions.IsAuthenticated(), IsPresiOrSecretary()]
-        return [permissions.IsAuthenticated(), IsPresiOrSecretary()]
+            return [permissions.IsAuthenticated(), CanGererCaisse()]
+        # Lecture (liste/détail/mes_confirmations) : tout le bureau, pour voir la trace.
+        return [permissions.IsAuthenticated(), IsBureau()]
 
     def get_queryset(self):
         return (
@@ -107,7 +126,18 @@ class MouvementCaisseViewSet(viewsets.ModelViewSet):
             raise ValidationError("Tu as déjà statué sur ce mouvement.")
 
         confirmation.decision = decision
-        confirmation.date_decision = datetime.now()
+        confirmation.date_decision = timezone.now()
         confirmation.save()
+
+        # Important : mouvement vient de get_object() avec prefetch_related sur
+        # 'confirmations', mis en cache AVANT la sauvegarde ci-dessus. Sans ce
+        # refetch, la réponse renverrait encore l'ancien statut (EN_ATTENTE).
+        mouvement.refresh_from_db()
+        mouvement = (
+            MouvementCaisse.objects
+            .select_related('initiee_par')
+            .prefetch_related('confirmations__membre')
+            .get(pk=mouvement.pk)
+        )
 
         return Response(MouvementCaisseSerializer(mouvement).data)

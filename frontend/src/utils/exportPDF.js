@@ -7,8 +7,15 @@
  *   exportPDF('cotisation', { titre: 'Cotisations — Août 2026', soustitre: 'Aristide Kpess' })
  *   exportPDF('sanctions')
  *
- * La fonction injecte temporairement une feuille de style dédiée print,
- * lance window.print(), puis nettoie immédiatement — la page ne change pas.
+ * Technique : on utilise `visibility` (pas `display`) pour masquer tout sauf
+ * la zone ciblée. Contrairement à `display:none`, `visibility:hidden` laisse
+ * les enfants pouvoir redevenir visibles individuellement (`visibility:visible`),
+ * donc ça marche même si la zone est enfouie profondément dans l'arbre React.
+ * L'en-tête PGST est inséré comme premier enfant DE LA ZONE elle-même, pour
+ * suivre le même flux normal, sans jonglage de positionnement absolu.
+ *
+ * Style volontairement sobre : pas de couleurs, pas de zébrures, des filets
+ * fins — un document imprimé classique, pas un export "dashboard coloré".
  */
 
 export const ZONES_PDF = {
@@ -23,6 +30,9 @@ export const ZONES_PDF = {
 export function exportPDF(zone, meta = {}) {
   const selector = ZONES_PDF[zone]
   if (!selector) return
+
+  const zoneEl = document.querySelector(selector)
+  if (!zoneEl) return
 
   const titre = meta.titre ?? 'PGST — Rapport'
   const soustitre = meta.soustitre ?? ''
@@ -40,54 +50,66 @@ export function exportPDF(zone, meta = {}) {
 
   style.textContent = `
     @media print {
-      /* Masque tout sauf la zone ciblée + les en-têtes pdf */
-      body > * { display: none !important; }
-      #pgst-print-header,
-      ${selector} { display: block !important; }
+      body * { visibility: hidden; }
+      ${selector}, ${selector} * { visibility: visible; }
+
+      ${selector} {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        font-family: Georgia, 'Times New Roman', serif;
+        color: #1a1a1a;
+      }
 
       #pgst-print-header {
-        padding: 12px 0 8px;
-        border-bottom: 2px solid #3F4A77;
-        margin-bottom: 16px;
+        padding: 0 0 10px;
+        margin-bottom: 22px;
+        border-bottom: 1px solid #1a1a1a;
       }
       #pgst-print-header h1 {
-        font-size: 16pt;
-        font-weight: 900;
-        color: #3F4A77;
+        font-size: 15pt;
+        font-weight: 700;
+        color: #1a1a1a;
         margin: 0;
+        letter-spacing: 0.2px;
       }
       #pgst-print-header p {
-        font-size: 9pt;
-        color: #666;
-        margin: 2px 0 0;
+        font-size: 10pt;
+        color: #555;
+        margin: 3px 0 0;
       }
 
-      ${selector} { width: 100%; }
-      table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-      th { background: #3F4A77 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 6px 8px; text-align: left; }
-      td { padding: 5px 8px; border-bottom: 1px solid #eee; }
-      tr:nth-child(even) td { background: #f8f8f8; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      h2 { color: #1a1a1a !important; border-bottom-color: #1a1a1a !important; font-size: 12.5pt !important; }
 
-      @page { margin: 15mm; }
+      table { width: 100%; border-collapse: collapse; font-size: 11pt; }
+      th {
+        background: none !important;
+        color: #1a1a1a !important;
+        font-weight: 700;
+        text-align: left;
+        padding: 7px 10px;
+        border-bottom: 1.5px solid #1a1a1a;
+      }
+      td { padding: 7px 10px; border-bottom: 0.5px solid #ccc; }
+      tr:nth-child(even) td { background: none !important; }
+
+      @page { margin: 20mm; }
     }
   `
 
-  // Injecte un en-tête temporaire dans le DOM (retiré après impression)
   let header = document.getElementById('pgst-print-header')
-  if (!header) {
-    header = document.createElement('div')
-    header.id = 'pgst-print-header'
-    header.style.display = 'none'
-    document.body.appendChild(header)
-  }
+  if (header) header.remove()
+  header = document.createElement('div')
+  header.id = 'pgst-print-header'
   header.innerHTML = `
     <h1>PGST — ${titre}</h1>
     <p>${soustitre ? soustitre + ' · ' : ''}Exporté le ${dateStr}</p>
   `
+  zoneEl.insertBefore(header, zoneEl.firstChild)
 
   window.print()
 
-  // Nettoyage après fermeture de la boîte d'impression
   setTimeout(() => {
     style.textContent = ''
     header.remove()

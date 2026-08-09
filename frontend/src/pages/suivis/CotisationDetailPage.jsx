@@ -71,10 +71,10 @@ export default function CotisationDetailPage() {
               <span className="font-bold">{records.length}</span> au total.
             </p>
           )}
-          {!loading && lignes.length > 0 && (
+          {vueGlobale && !loading && lignes.length > 0 && (
             <BoutonPDF
               zone="cotisation"
-              titre={vueGlobale ? 'Caisse — Cotisations' : 'Ma cotisation'}
+              titre="Caisse — Cotisations"
               soustitre={`${MOIS_FR[mois - 1]} ${annee}`}
             />
           )}

@@ -112,7 +112,7 @@ export default function PresencesPage() {
 
       <div className="flex items-center justify-between px-5 pt-5 pb-2">
         <h2 className="font-extrabold text-lg">Registre des présences</h2>
-        {!loading && (
+        {!loading && isBureau && (
           <BoutonPDF zone="presences" titre="Présences aux réunions" />
         )}
       </div>
