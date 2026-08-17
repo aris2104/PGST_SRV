@@ -10,7 +10,7 @@ from .models import MouvementCaisse, ConfirmationMouvement
 from .serializers import MouvementCaisseSerializer, ConfirmationSerializer
 
 # Rôles "bureau" qui reçoivent une demande de confirmation pour chaque sortie.
-ROLES_BUREAU = {'PRESIDENT', 'SECRETAIRE', 'DISCIPLINAIRE', 'ORGANISATEUR', 'ADMIN'}
+ROLES_BUREAU = {'PRESIDENT', 'SECRETAIRE', 'DISCIPLINAIRE', 'ORGANISATEUR', 'CEREMONIAIRE', 'ADMIN', 'SUPER_ADMIN'}
 
 
 class CanGererCaisse(permissions.BasePermission):
@@ -20,11 +20,15 @@ class CanGererCaisse(permissions.BasePermission):
 
 
 class IsBureau(permissions.BasePermission):
-    """Tout rôle responsable (pas un simple Servant) : consulter les mouvements."""
+    """
+    Tout rôle responsable (pas un simple Servant) : consulter les mouvements.
+    Le Conseiller voit tout comme les autres (sauf les logs, gérés à part).
+    """
     def has_permission(self, request, view):
         return _has_role(
             request.user,
-            'PRESIDENT', 'SECRETAIRE', 'TRESORIER', 'DISCIPLINAIRE', 'ORGANISATEUR', 'ADMIN',
+            'PRESIDENT', 'SECRETAIRE', 'TRESORIER', 'DISCIPLINAIRE',
+            'ORGANISATEUR', 'CEREMONIAIRE', 'CONSEILLER', 'ADMIN',
         )
 
 

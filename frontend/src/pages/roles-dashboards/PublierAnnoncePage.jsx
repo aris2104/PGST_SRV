@@ -83,7 +83,7 @@ export default function PublierAnnoncePage() {
             className="w-full px-4 py-3 rounded-md bg-white border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-navy"
           >
             <option value="GENERALE">Générale (tout le groupe)</option>
-            <option value="CIBLEE">Pour toi (un servant précis)</option>
+            <option value="CIBLEE">Ciblée (un servant précis)</option>
           </select>
         </label>
 

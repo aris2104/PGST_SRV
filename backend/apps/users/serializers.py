@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.password_validation import validate_password
 from apps.roles.serializers import RoleSerializer
 from .models import User, NotificationPreference
 
@@ -42,11 +43,17 @@ class AdminUserListSerializer(serializers.ModelSerializer):
 
 class AdminUserCreateSerializer(serializers.ModelSerializer):
     """Création d'un nouveau membre par un administrateur du groupe."""
-    password = serializers.CharField(write_only=True, min_length=4)
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
         fields = ['matricule', 'nom', 'prenom', 'telephone', 'membre_depuis', 'role', 'password']
+
+    def validate_password(self, value):
+        # Branche réellement AUTH_PASSWORD_VALIDATORS (settings.py) — sans
+        # cet appel explicite, DRF ne les applique jamais automatiquement.
+        validate_password(value)
+        return value
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -72,12 +79,17 @@ class NotificationPreferenceSerializer(serializers.ModelSerializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     ancien_mot_de_passe = serializers.CharField(write_only=True)
-    nouveau_mot_de_passe = serializers.CharField(write_only=True, min_length=4)
+    nouveau_mot_de_passe = serializers.CharField(write_only=True)
 
     def validate_ancien_mot_de_passe(self, value):
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Mot de passe actuel incorrect.")
+        return value
+
+    def validate_nouveau_mot_de_passe(self, value):
+        user = self.context['request'].user
+        validate_password(value, user=user)
         return value
 
     def save(self):

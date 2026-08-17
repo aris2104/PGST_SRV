@@ -3,7 +3,6 @@ import { ChevronLeft, Bell, BellRing } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { subscribeUserToPush } from '../../utils/push'
 import { useNotifications } from '../../hooks/useNotificationsBadge'
-import { useAuth } from '../../context/AuthContext'
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
@@ -11,7 +10,6 @@ function formatDate(dateStr) {
 
 export default function Header({ title, subtitle, showBack = false, onBack }) {
   const navigate = useNavigate()
-  const { user } = useAuth()
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [panelOuvert, setPanelOuvert] = useState(false)
   const { count: badgeCount, items } = useNotifications()
@@ -42,16 +40,7 @@ export default function Header({ title, subtitle, showBack = false, onBack }) {
 
   const handleItemClick = (item) => {
     setPanelOuvert(false)
-    const estServant = user?.role?.code === 'SERVANT'
-    if (item.type === 'annonce') {
-      navigate(estServant ? `/accueil?annonce=${item.id}` : `/admin/programme-annonces?annonce=${item.id}`)
-    } else if (item.type === 'message') {
-      navigate('/parametres/contact-admin')
-    } else if (item.type === 'confirmation') {
-      navigate('/caisse/confirmations')
-    } else {
-      navigate(`/calendrier?odj=${item.id}`)
-    }
+    navigate(item.target)
   }
 
   return (

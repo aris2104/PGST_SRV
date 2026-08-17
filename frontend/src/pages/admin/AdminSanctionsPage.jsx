@@ -6,7 +6,7 @@ export default function AdminSanctionsPage() {
     <div>
       <Header title="Sanctions" subtitle="Vue Admin" showBack />
       <div className="px-5 py-5">
-        <SanctionsOverview />
+        <SanctionsOverview estAdmin />
       </div>
     </div>
   )

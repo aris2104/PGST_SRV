@@ -8,13 +8,17 @@ import { useAuth } from '../../context/AuthContext'
 function ReponseForm({ message, onReponduAvecSucces }) {
   const [reponse, setReponse] = useState('')
   const [envoi, setEnvoi] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setEnvoi(true)
+    setError('')
     try {
       const updated = await supportService.repondreMessage(message.id, reponse)
       onReponduAvecSucces(updated)
+    } catch {
+      setError("L'envoi a échoué. Réessaie.")
     } finally {
       setEnvoi(false)
     }
@@ -22,6 +26,7 @@ function ReponseForm({ message, onReponduAvecSucces }) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-3 flex flex-col gap-2">
+      {error && <p className="text-danger text-xs font-medium">{error}</p>}
       <textarea
         value={reponse}
         onChange={(e) => setReponse(e.target.value)}

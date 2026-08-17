@@ -61,6 +61,123 @@ function Tableau({ colonnes, lignes }) {
   )
 }
 
+function StatutBadgeCotisation({ statut }) {
+  if (!statut) return <span className="text-neutral-300 font-bold text-[10px]">—</span>
+  const payé = statut === 'PAYE'
+  return (
+    <span className={`inline-block px-2 py-0.5 text-[10px] font-black rounded ${payé ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+      {payé ? 'Payé' : 'Impayé'}
+    </span>
+  )
+}
+
+const STATUTS_PRESENCE = {
+  PRESENT: { label: 'P', badge: 'bg-emerald-100 text-emerald-800' },
+  RETARD: { label: 'R', badge: 'bg-amber-100 text-amber-800' },
+  PERMISSION: { label: 'Perm', badge: 'bg-blue-100 text-blue-800' },
+  ABSENT: { label: 'A', badge: 'bg-rose-100 text-rose-800' },
+}
+
+function StatutBadgePresence({ statut }) {
+  const s = STATUTS_PRESENCE[statut]
+  if (!s) return <span className="text-neutral-300 font-bold text-[10px]">—</span>
+  return <span className={`inline-block px-2 py-0.5 text-[10px] font-black rounded ${s.badge}`}>{s.label}</span>
+}
+
+// --- Cotisations : lignes = servants (fixes), colonnes = dates de début de
+// semaine (même format que Présences : DD/MM), cellule = badge Payé/Impayé. ---
+function MatriceCotisations({ records }) {
+  if (!records.length) return <p className="text-sm text-neutral-400 italic">Aucune donnée pour cette période.</p>
+
+  const colonnes = [...new Set(records.map((r) => r.date_debut_semaine))].sort()
+
+  const servantsMap = new Map()
+  records.forEach((r) => {
+    const id = r.servant
+    if (!servantsMap.has(id)) {
+      servantsMap.set(id, { id, nom: `${r.servant__prenom} ${r.servant__nom}`, cellules: {} })
+    }
+    servantsMap.get(id).cellules[r.date_debut_semaine] = r.statut
+  })
+  const lignes = [...servantsMap.values()].sort((a, b) => a.nom.localeCompare(b.nom))
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm border-collapse">
+        <thead>
+          <tr>
+            <th className="px-2 py-1.5 text-xs font-bold border-b-2 border-neutral-800">Servant</th>
+            {colonnes.map((d) => (
+              <th key={d} className="px-2 py-1.5 text-xs font-bold border-b-2 border-neutral-800 text-center whitespace-nowrap">
+                {new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {lignes.map((l) => (
+            <tr key={l.id}>
+              <td className="px-2 py-1.5 border-b border-neutral-200 font-semibold">{l.nom}</td>
+              {colonnes.map((d) => (
+                <td key={d} className="px-2 py-1.5 border-b border-neutral-200 text-center">
+                  <StatutBadgeCotisation statut={l.cellules[d]} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// --- Présences : lignes = servants (fixes), colonnes = dates de réunion,
+// cellule = badge Présent/Absent/Permission/Retard. ---
+function MatricePresences({ records }) {
+  if (!records.length) return <p className="text-sm text-neutral-400 italic">Aucune donnée pour cette période.</p>
+
+  const colonnes = [...new Set(records.map((r) => r['ordre_du_jour__date']))].sort()
+
+  const servantsMap = new Map()
+  records.forEach((r) => {
+    const id = r.servant
+    if (!servantsMap.has(id)) {
+      servantsMap.set(id, { id, nom: `${r.servant__prenom} ${r.servant__nom}`, cellules: {} })
+    }
+    servantsMap.get(id).cellules[r['ordre_du_jour__date']] = r.statut
+  })
+  const lignes = [...servantsMap.values()].sort((a, b) => a.nom.localeCompare(b.nom))
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm border-collapse">
+        <thead>
+          <tr>
+            <th className="px-2 py-1.5 text-xs font-bold border-b-2 border-neutral-800">Servant</th>
+            {colonnes.map((d) => (
+              <th key={d} className="px-2 py-1.5 text-xs font-bold border-b-2 border-neutral-800 text-center whitespace-nowrap">
+                {new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {lignes.map((l) => (
+            <tr key={l.id}>
+              <td className="px-2 py-1.5 border-b border-neutral-200 font-semibold">{l.nom}</td>
+              {colonnes.map((d) => (
+                <td key={d} className="px-2 py-1.5 border-b border-neutral-200 text-center">
+                  <StatutBadgePresence statut={l.cellules[d]} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 export default function RapportPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -252,15 +369,7 @@ export default function RapportPage() {
             <div id="pdf-zone-rapport" ref={zoneRef}>
               {sections.has('cotisations') && (
                 <Section titre="Cotisations">
-                  <Tableau
-                    colonnes={[
-                      { key: 'nom', label: 'Nom', render: (l) => `${l['servant__prenom']} ${l['servant__nom']}` },
-                      { key: 'semaine', label: 'Semaine', render: (l) => `Sem. ${l.numero_semaine}` },
-                      { key: 'statut', label: 'Statut', render: (l) => l.statut === 'PAYE' ? 'Payé' : 'Impayé' },
-                      { key: 'montant', label: 'Montant', render: (l) => l.montant ? `${l.montant} FCFA` : '—' },
-                    ]}
-                    lignes={data.cotisations}
-                  />
+                  <MatriceCotisations records={data.cotisations} />
                 </Section>
               )}
 
@@ -280,14 +389,7 @@ export default function RapportPage() {
 
               {sections.has('presences') && (
                 <Section titre="Présences">
-                  <Tableau
-                    colonnes={[
-                      { key: 'servant', label: 'Servant', render: (l) => `${l['servant__prenom']} ${l['servant__nom']}` },
-                      { key: 'date', label: 'Réunion', render: (l) => new Date(l['ordre_du_jour__date']).toLocaleDateString('fr-FR') },
-                      { key: 'statut', label: 'Statut', render: (l) => l.statut },
-                    ]}
-                    lignes={data.presences}
-                  />
+                  <MatricePresences records={data.presences} />
                 </Section>
               )}
 

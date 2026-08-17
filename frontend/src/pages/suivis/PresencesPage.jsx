@@ -149,7 +149,7 @@ export default function PresencesPage() {
               Matrice du registre ({ordresDuJour.length} réunions)
             </h3>
             {isBureau && (
-              <span className="text-xs font-bold text-info bg-info/10 px-2.5 py-1 rounded-full">
+              <span className="print:hidden text-xs font-bold text-info bg-info/10 px-2.5 py-1 rounded-full">
                 Mode Gestionnaire
               </span>
             )}
@@ -172,7 +172,7 @@ export default function PresencesPage() {
                       {ordresDuJour.map((odj) => (
                         <th key={odj.id} className="p-3 text-center min-w-[80px] whitespace-nowrap">
                           <span className="block text-neutral-800">{formatDateShort(odj.date)}</span>
-                          <span className="block text-[9px] font-normal text-neutral-400 truncate max-w-[70px]" title={odj.titre}>
+                          <span className="block text-[9px] font-normal text-neutral-400 break-words max-w-[70px]" title={odj.titre}>
                             {odj.titre}
                           </span>
                         </th>

@@ -1,30 +1,35 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import Header from '../../components/layout/Header'
 import { adminService } from '../../services/adminService'
+import { useAuth } from '../../context/AuthContext'
+import { ROLES } from '../../utils/constants'
 
 const today = new Date().toISOString().slice(0, 10)
+const FORM_VIDE = { matricule: '', nom: '', prenom: '', telephone: '', membre_depuis: today, role: '', password: '' }
 
 export default function AddMemberPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const roleCode = user?.role?.code
+  const isAdmin = roleCode === ROLES.ADMIN || roleCode === ROLES.SUPER_ADMIN
+  const isSuperAdmin = roleCode === ROLES.SUPER_ADMIN
   const [roles, setRoles] = useState([])
-  const [form, setForm] = useState({
-    matricule: '',
-    nom: '',
-    prenom: '',
-    telephone: '',
-    membre_depuis: today,
-    role: '',
-    password: '',
-  })
+  const [form, setForm] = useState(FORM_VIDE)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [succes, setSucces] = useState(null) // null | { nom, prenom, matricule }
 
   useEffect(() => {
-    adminService.getRoles().then(setRoles).catch(() => setRoles([]))
-  }, [])
+    // Seul l'Admin voit/choisit le rôle à la création : inutile de charger
+    // la liste des rôles pour Président/Secrétaire, qui créent toujours
+    // un simple Servant (imposé aussi côté backend, voir perform_create).
+    if (isAdmin) {
+      adminService.getRoles().then(setRoles).catch(() => setRoles([]))
+    }
+  }, [isAdmin])
 
   const handleChange = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }))
@@ -37,7 +42,7 @@ export default function AddMemberPage() {
       const payload = { ...form }
       if (!payload.role) delete payload.role
       await adminService.creerMembre(payload)
-      navigate('/presi-secre') // Retour au dashboard après ajout
+      setSucces({ nom: form.nom, prenom: form.prenom, matricule: form.matricule })
     } catch (err) {
       const data = err.response?.data
       const premierChamp = data ? Object.values(data)[0] : null
@@ -49,6 +54,30 @@ export default function AddMemberPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  if (succes) {
+    return (
+      <div className="min-h-screen bg-neutral-50 pb-10">
+        <Header title="Ajouter un membre" showBack />
+        <div className="px-5 py-10 flex flex-col items-center text-center">
+          <CheckCircle2 size={48} className="text-success mb-4" />
+          <h2 className="font-extrabold text-lg mb-1">Membre ajouté</h2>
+          <p className="text-sm text-neutral-500 mb-6">
+            {succes.prenom} {succes.nom} ({succes.matricule}) a bien été créé{isAdmin ? '' : ' avec le rôle Servant'}.
+          </p>
+          <div className="w-full max-w-xs flex flex-col gap-3">
+            <Button onClick={() => navigate('/membres')}>Voir la liste des membres</Button>
+            <Button
+              variant="secondary"
+              onClick={() => { setForm(FORM_VIDE); setSucces(null) }}
+            >
+              Ajouter un autre membre
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -111,19 +140,33 @@ export default function AddMemberPage() {
             />
           </label>
 
-          <label className="block mb-4">
-            <span className="block mb-1.5 font-semibold text-sm text-neutral-700">Rôle (optionnel)</span>
-            <select
-              className="w-full px-4 py-3 rounded-md bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-navy"
-              value={form.role}
-              onChange={handleChange('role')}
-            >
-              <option value="">Aucun rôle</option>
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>{r.libelle}</option>
-              ))}
-            </select>
-          </label>
+          {isAdmin ? (
+            <label className="block mb-4">
+              <span className="block mb-1.5 font-semibold text-sm text-neutral-700">Rôle (optionnel)</span>
+              <select
+                className="w-full px-4 py-3 rounded-md bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-navy"
+                value={form.role}
+                onChange={handleChange('role')}
+              >
+                <option value="">Aucun rôle</option>
+                {roles
+                  .filter((r) => isSuperAdmin || !['ADMIN', 'SUPER_ADMIN'].includes(r.code))
+                  .map((r) => (
+                    <option key={r.id} value={r.id}>{r.libelle}</option>
+                  ))}
+              </select>
+              {!isSuperAdmin && (
+                <p className="text-xs text-neutral-400 mt-1">
+                  Seul un Super Admin peut attribuer le rôle Admin.
+                </p>
+              )}
+            </label>
+          ) : (
+            <p className="mb-4 text-xs text-neutral-500 bg-neutral-50 border border-neutral-200 rounded-md px-3 py-2">
+              Ce membre sera créé avec le rôle <span className="font-semibold">Servant</span>.
+              Seul un administrateur peut attribuer un rôle du bureau.
+            </p>
+          )}
 
           <label className="block mb-4">
             <span className="block mb-1.5 font-semibold text-sm text-neutral-700">Mot de passe initial</span>

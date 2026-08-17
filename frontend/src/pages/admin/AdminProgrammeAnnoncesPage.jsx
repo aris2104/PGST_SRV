@@ -5,8 +5,21 @@ import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/common/EmptyState'
 import { calendarService } from '../../services/calendarService'
+import { useAuth } from '../../context/AuthContext'
+
+const SOUS_TITRE_PAR_ROLE = {
+  ADMIN: 'Vue globale',
+  PRESIDENT: 'Gestion du groupe',
+  SECRETAIRE: 'Secrétariat',
+  TRESORIER: 'Vue Trésorier',
+  DISCIPLINAIRE: 'Vue Disciplinaire',
+  ORGANISATEUR: 'Vue Organisateur',
+}
 
 export default function AdminProgrammeAnnoncesPage() {
+  const { user } = useAuth()
+  const estAdmin = user?.role?.code === 'ADMIN'
+  const sousTitre = SOUS_TITRE_PAR_ROLE[user?.role?.code] ?? ''
   const [programme, setProgramme] = useState([])
   const [annonces, setAnnonces] = useState([])
   const [loading, setLoading] = useState(true)
@@ -15,15 +28,23 @@ export default function AdminProgrammeAnnoncesPage() {
   const highlightRefs = useRef({})
 
   useEffect(() => {
+    // Seul l'Admin voit TOUTES les annonces (y compris celles ciblées vers
+    // d'autres) — les autres rôles du bureau ne voient que le fil personnel
+    // (générales + celles qui LEUR sont destinées), pour respecter la
+    // confidentialité d'un message "pour toi".
+    const chargerAnnonces = estAdmin
+      ? calendarService.getToutesAnnonces()
+      : calendarService.getAnnonces()
+
     Promise.all([
       calendarService.getProgrammeSemaine().catch(() => []),
-      calendarService.getAnnonces().catch(() => []),
+      chargerAnnonces.catch(() => []),
     ]).then(([prog, ann]) => {
       setProgramme(prog)
       setAnnonces(ann)
       setLoading(false)
     })
-  }, [])
+  }, [estAdmin])
 
   useEffect(() => {
     if (!highlightId || loading) return
@@ -33,7 +54,7 @@ export default function AdminProgrammeAnnoncesPage() {
 
   return (
     <div>
-      <Header title="Programme & Annonces" subtitle="Vue Admin" showBack />
+      <Header title="Programme & Annonces" subtitle={sousTitre} showBack />
 
       <div className="px-5 py-5">
         <h2 className="font-extrabold text-lg mb-3">Programme de la semaine</h2>

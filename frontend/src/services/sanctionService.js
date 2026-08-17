@@ -19,4 +19,15 @@ export const sanctionService = {
     const { data } = await api.post('/sanctions/', payload)
     return data
   },
+
+  /** Réservé à l'Admin : corriger une sanction déjà créée (irréversible pour le Disciplinaire) */
+  async modifier(id, payload) {
+    const { data } = await api.patch(`/sanctions/${id}/`, payload)
+    return data
+  },
+
+  /** Réservé à l'Admin : annuler/supprimer une sanction */
+  async supprimer(id) {
+    await api.delete(`/sanctions/${id}/`)
+  },
 }

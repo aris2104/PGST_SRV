@@ -16,6 +16,7 @@ export default function ConfirmationsSortiesPage() {
   const [sorties, setSorties] = useState([])
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState(null)
+  const [error, setError] = useState('')
 
   const charger = () => {
     caisseService.getMesConfirmations()
@@ -28,9 +29,12 @@ export default function ConfirmationsSortiesPage() {
 
   const handleStatuer = async (mouvementId, decision) => {
     setSavingId(mouvementId)
+    setError('')
     try {
       await caisseService.statuer(mouvementId, decision)
       setSorties((prev) => prev.filter((s) => s.id !== mouvementId))
+    } catch {
+      setError("Ta décision n'a pas pu être enregistrée. Réessaie.")
     } finally {
       setSavingId(null)
     }
@@ -41,6 +45,7 @@ export default function ConfirmationsSortiesPage() {
       <Header title="Sorties à approuver" showBack />
 
       <div className="px-5 py-5">
+        {error && <p className="text-danger text-sm font-medium mb-3">{error}</p>}
         {loading && <p className="text-neutral-400 text-sm">Chargement...</p>}
 
         {!loading && sorties.length === 0 && (

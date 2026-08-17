@@ -5,17 +5,44 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Cotisation
 from .serializers import CotisationSerializer
+from utils.permissions import is_admin_user
 
 
 class IsTresorierOrReadOnlyOwn(permissions.BasePermission):
+    """
+    - Lecture : tout le monde authentifié (filtré à ses propres cotisations
+      pour un non-privilégié, voir get_queryset).
+    - Écriture (POST/PATCH) : Trésorier ou Admin.
+    - MAIS une cotisation déjà marquée PAYE devient irréversible pour le
+      Trésorier : seul l'Admin peut encore la corriger ou la supprimer
+      (voir has_object_permission). "Marquer payé" (IMPAYE -> PAYE) reste
+      l'action normale d'enregistrement et n'est donc pas bloquée.
+    """
+
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
         user = request.user
-        return bool(
-            user and user.is_authenticated and
-            (user.is_staff or (user.role and user.role.code in ('TRESORIER', 'ADMIN')))
-        )
+        if not (user and user.is_authenticated):
+            return False
+        is_admin = is_admin_user(user)
+        is_tresorier = bool(user.role and user.role.code == 'TRESORIER')
+        return is_admin or is_tresorier
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        user = request.user
+        is_admin = is_admin_user(user)
+        if is_admin:
+            return True
+        # Suppression : jamais pour le Trésorier, seulement pour l'Admin.
+        if request.method == 'DELETE':
+            return False
+        # Modification : autorisée pour le Trésorier uniquement tant que la
+        # cotisation n'est pas encore payée (c'est l'enregistrement normal).
+        # Une fois PAYE, c'est définitif de son côté.
+        return obj.statut != Cotisation.Statut.PAYE
 
 
 class CotisationViewSet(viewsets.ModelViewSet):
@@ -31,7 +58,11 @@ class CotisationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         qs = Cotisation.objects.select_related('servant')
-        is_privileged = user.is_staff or (user.role and user.role.code in ('TRESORIER', 'ADMIN'))
+        # Le Conseiller voit tout (sauf les logs, gérés ailleurs) sans pour
+        # autant pouvoir enregistrer un paiement : c'est un droit de lecture.
+        is_privileged = user.is_staff or (
+            user.role and user.role.code in ('TRESORIER', 'ADMIN', 'SUPER_ADMIN', 'CONSEILLER')
+        )
         if not is_privileged:
             qs = qs.filter(servant=user)
         return qs

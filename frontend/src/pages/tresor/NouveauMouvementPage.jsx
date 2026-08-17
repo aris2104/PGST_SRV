@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CheckCircle2, Clock } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import Button from '../../components/ui/Button'
 import { caisseService } from '../../services/caisseService'
@@ -17,6 +18,7 @@ export default function NouveauMouvementPage() {
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [succes, setSucces] = useState(null) // null | { type, montant, motif }
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
 
@@ -26,7 +28,7 @@ export default function NouveauMouvementPage() {
     setError('')
     try {
       await caisseService.creerMouvement({ ...form, montant: parseFloat(form.montant) })
-      navigate('/tresor/mouvements')
+      setSucces({ type: form.type_mouvement, montant: form.montant, motif: form.motif })
     } catch {
       setError("L'enregistrement a échoué. Vérifie les champs.")
     } finally {
@@ -35,6 +37,43 @@ export default function NouveauMouvementPage() {
   }
 
   const estSortie = form.type_mouvement === 'SORTIE'
+
+  if (succes) {
+    const sortie = succes.type === 'SORTIE'
+    return (
+      <div>
+        <Header title="Nouveau mouvement" showBack />
+        <div className="px-5 py-10 flex flex-col items-center text-center">
+          {sortie ? (
+            <Clock size={48} className="text-amber-500 mb-4" />
+          ) : (
+            <CheckCircle2 size={48} className="text-success mb-4" />
+          )}
+          <h2 className="font-extrabold text-lg mb-1">
+            {sortie ? 'Sortie soumise au bureau' : 'Entrée enregistrée'}
+          </h2>
+          <p className="text-sm text-neutral-500 mb-6">
+            {succes.motif} — {succes.montant} FCFA
+            {sortie
+              ? ' — en attente de confirmation par le bureau, pas encore déduite du solde.'
+              : ' — déjà comptabilisée dans le solde.'}
+          </p>
+          <div className="w-full max-w-xs flex flex-col gap-3">
+            <Button onClick={() => navigate('/tresor/mouvements')}>Voir les mouvements</Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setForm({ type_mouvement: 'ENTREE', montant: '', motif: '', description: '', date: today })
+                setSucces(null)
+              }}
+            >
+              Enregistrer un autre mouvement
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>

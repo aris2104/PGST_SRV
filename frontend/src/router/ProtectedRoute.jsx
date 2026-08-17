@@ -20,7 +20,15 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/connexion" replace />
   }
 
-  if (allowedRoles && !allowedRoles.includes(user?.role?.code)) {
+  const roleCode = user?.role?.code
+  // Le Super Admin a au moins tous les droits de l'Admin (et plus, géré
+  // au cas par cas côté backend) : toute route ouverte à ADMIN doit
+  // aussi l'être pour SUPER_ADMIN, sans avoir à le lister partout.
+  const rolesEffectifs = allowedRoles?.includes('ADMIN')
+    ? [...allowedRoles, 'SUPER_ADMIN']
+    : allowedRoles
+
+  if (rolesEffectifs && !rolesEffectifs.includes(roleCode)) {
     return <Navigate to="/accueil" replace />
   }
 

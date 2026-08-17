@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
-from utils.permissions import IsAdmin
+from utils.permissions import IsAdmin, is_admin_user
 from .models import Message
 from .serializers import MessageSerializer, MessageReplySerializer
 
@@ -26,14 +26,14 @@ class MessageViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         qs = Message.objects.select_related('auteur')
-        if user.is_staff or (user.role and user.role.code == 'ADMIN'):
+        if is_admin_user(user):
             return qs
         return qs.filter(auteur=user)
 
     def perform_create(self, serializer):
         user = self.request.user
         # L'Admin n'a pas de sens à se contacter lui-même.
-        if user.role and user.role.code == 'ADMIN':
+        if is_admin_user(user):
             raise PermissionDenied("L'administrateur ne peut pas s'envoyer un message à lui-même.")
         serializer.save(auteur=user)
 

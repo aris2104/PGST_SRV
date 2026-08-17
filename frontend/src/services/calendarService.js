@@ -27,6 +27,12 @@ export const calendarService = {
     return data.results ?? data
   },
 
+  /** Réservé à l'Admin : voit toutes les annonces, y compris celles ciblées vers d'autres. */
+  async getToutesAnnonces() {
+    const { data } = await api.get('/annonces/toutes/')
+    return data.results ?? data
+  },
+
   async creerAnnonce(payload) {
     const { data } = await api.post('/annonces/', payload)
     return data
@@ -39,6 +45,11 @@ export const calendarService = {
 
   async creerOrdreDuJour(payload) {
     const { data } = await api.post('/calendrier/ordre-du-jour/', payload)
+    return data
+  },
+  /** Réservé à l'Organisateur/Admin : modifier un ordre du jour existant (réversible) */
+  async modifierOrdreDuJour(id, payload) {
+    const { data } = await api.patch(`/calendrier/ordre-du-jour/${id}/`, payload)
     return data
   },
   async getResumePresences() {

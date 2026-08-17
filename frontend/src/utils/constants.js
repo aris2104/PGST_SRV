@@ -1,5 +1,5 @@
 // Base de l'API Django (Redirigé automatiquement par le proxy de vite.config.js vers localhost:8000)
-export const API_BASE_URL = '/api/'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/'
 
 // Miroir JS de tailwind.config.js, utile pour les couleurs passées en JS (ex: SVG, inline style)
 export const COLORS = {
@@ -24,7 +24,10 @@ export const ROLES = {
   TRESORIER: 'TRESORIER',
   DISCIPLINAIRE: 'DISCIPLINAIRE',
   ORGANISATEUR: 'ORGANISATEUR',
+  CEREMONIAIRE: 'CEREMONIAIRE',
+  CONSEILLER: 'CONSEILLER',
   ADMIN: 'ADMIN',
+  SUPER_ADMIN: 'SUPER_ADMIN',
   SERVANT: 'SERVANT',
 }
 

@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Home, Calendar, User, Settings } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
+import { getRoleConfig } from '../../utils/roleConfig'
 
 // Précharge silencieuse des 4 onglets principaux dès le premier touch/survol.
 // Comme ils sont en lazy dans AppRoutes, React les télécharge à la demande —
@@ -12,14 +14,19 @@ const PREFETCH = {
   '/parametres': () => import('../../pages/settings/SettingsPage'),
 }
 
-const ITEMS = [
-  { to: '/accueil', icon: Home, label: 'Accueil' },
-  { to: '/calendrier', icon: Calendar, label: 'Calendrier' },
-  { to: '/suivis', icon: User, label: 'Suivis' },
-  { to: '/parametres', icon: Settings, label: 'Paramètres' },
-]
-
 export default function BottomNavigation() {
+  const { user } = useAuth()
+  // Le libellé du 3e onglet dépend du rôle (ROLE_CONFIG) au lieu d'être
+  // codé en dur sur "Suivis" pour tout le monde.
+  const { suiviLabel, suiviRoute } = getRoleConfig(user?.role?.code)
+
+  const ITEMS = [
+    { to: '/accueil', icon: Home, label: 'Accueil' },
+    { to: '/calendrier', icon: Calendar, label: 'Calendrier' },
+    { to: suiviRoute, icon: User, label: suiviLabel },
+    { to: '/parametres', icon: Settings, label: 'Paramètres' },
+  ]
+
   return (
     <nav
       className="fixed bottom-0 inset-x-0 min-h-16 bg-white border-t border-neutral-200 flex items-center justify-around max-w-md mx-auto z-50"
@@ -38,12 +45,17 @@ export default function BottomNavigation() {
           }
         >
           {({ isActive }) => (
-            <Icon
-              size={24}
-              strokeWidth={isActive ? 2.5 : 2}
-              fill={isActive && Icon === User ? 'currentColor' : 'none'}
-              className={isActive && Icon === User ? 'text-info' : ''}
-            />
+            <>
+              <Icon
+                size={24}
+                strokeWidth={isActive ? 2.5 : 2}
+                fill={isActive && Icon === User ? 'currentColor' : 'none'}
+                className={isActive && Icon === User ? 'text-info' : ''}
+              />
+              <span className={`text-[11px] ${isActive ? 'font-bold' : 'font-medium'}`}>
+                {label}
+              </span>
+            </>
           )}
         </NavLink>
       ))}

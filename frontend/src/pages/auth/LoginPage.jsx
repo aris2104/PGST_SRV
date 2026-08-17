@@ -69,7 +69,7 @@ export default function LoginPage() {
 
       {/* 3. Pied de page équilibrant l'alignement */}
       <div className="pb-2 text-center text-xs text-neutral-500">
-        Plateforme PSGT
+        Plateforme PGST
       </div>
 
     </div>

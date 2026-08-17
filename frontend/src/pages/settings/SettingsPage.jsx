@@ -4,6 +4,7 @@ import Header from '../../components/layout/Header'
 import Avatar from '../../components/common/Avatar'
 import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
+import { canContactAdmin } from '../../utils/roleConfig'
 
 function SettingsRow({ label, onClick }) {
   return (
@@ -32,7 +33,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <Header title="Parametres" />
+      <Header title="Paramètres" />
 
       <div className="px-5 py-5">
         <button
@@ -55,13 +56,16 @@ export default function SettingsPage() {
 
         <h2 className="font-extrabold mb-3 mt-8">SUPPORT</h2>
         <SettingsRow label="Aide" onClick={() => navigate('/parametres/aide')} />
-        {user?.role?.code !== 'ADMIN' && (
+        {canContactAdmin(user) && (
           <SettingsRow label="Contacter l'admin" onClick={() => navigate('/parametres/contact-admin')} />
         )}
 
+        <h2 className="font-extrabold mb-3 mt-8">À PROPOS</h2>
+        <SettingsRow label="L'équipe" onClick={() => navigate('/parametres/equipe')} />
+
         <div className="mt-8">
           <Button variant="danger" onClick={handleLogout}>
-            Se deconnecter
+            Se déconnecter
           </Button>
         </div>
       </div>

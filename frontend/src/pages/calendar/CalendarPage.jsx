@@ -244,11 +244,26 @@ export default function CalendarPage() {
     return d >= lundiCourant && d <= dimancheCourant
   })
 
+  // Si on arrive via une notification pointant vers un ordre du jour précis
+  // (?odj=123), et que celui-ci tombe dans une semaine différente de celle
+  // affichée par défaut (aujourd'hui), on se cale automatiquement sur SA
+  // semaine — sinon l'élément à surligner n'existe simplement pas dans la
+  // liste filtrée, et le lien de la notification ne mène nulle part.
+  useEffect(() => {
+    if (!highlightOdjId || loading) return
+    const cible = ordresDuJour.find((o) => String(o.id) === highlightOdjId)
+    if (!cible) return
+    const dateCible = new Date(cible.date)
+    if (dateCible < lundiCourant || dateCible > dimancheCourant) {
+      setCurrentDate(dateCible)
+    }
+  }, [highlightOdjId, loading, ordresDuJour])
+
   useEffect(() => {
     if (!highlightOdjId || loading) return
     const el = highlightRefs.current[highlightOdjId]
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [highlightOdjId, loading, ordresDuJour])
+  }, [highlightOdjId, loading, ordresDuJour, currentDate])
 
   return (
     <div>

@@ -14,8 +14,11 @@ class Role(models.Model):
         TRESORIER = 'TRESORIER', 'Trésorier'
         DISCIPLINAIRE = 'DISCIPLINAIRE', 'Responsable disciplinaire'
         ORGANISATEUR = 'ORGANISATEUR', 'Organisateur'
+        CEREMONIAIRE = 'CEREMONIAIRE', 'Cérémoniaire'
+        CONSEILLER = 'CONSEILLER', 'Conseiller'
         ADMIN = 'ADMIN', 'Administrateur'
         SERVANT = 'SERVANT', 'Servant'
+        SUPER_ADMIN = 'SUPER_ADMIN', 'Super Admin'
 
     code = models.CharField(max_length=20, choices=Code.choices, unique=True)
     libelle = models.CharField(max_length=100)

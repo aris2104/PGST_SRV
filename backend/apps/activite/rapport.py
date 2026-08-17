@@ -22,12 +22,12 @@ from apps.cotisations.models import Cotisation
 from apps.calendrier.models import Presence
 from apps.caisse.models import MouvementCaisse
 
-ROLES_AUTORISES_RAPPORT = ('PRESIDENT', 'SECRETAIRE', 'TRESORIER', 'ADMIN')
+ROLES_AUTORISES_RAPPORT = ('PRESIDENT', 'SECRETAIRE', 'TRESORIER', 'CONSEILLER', 'ADMIN')
 TOUTES_LES_SECTIONS = {'cotisations', 'sanctions', 'presences', 'mouvements'}
 
 
 class CanVoirRapport(permissions.BasePermission):
-    """Président, Secrétaire, Trésorier, Admin — cohérent avec la route frontend /rapport."""
+    """Président, Secrétaire, Trésorier, conseiller, Admin — cohérent avec la route frontend /rapport."""
     def has_permission(self, request, view):
         return _has_role(request.user, *ROLES_AUTORISES_RAPPORT)
 
@@ -90,7 +90,10 @@ class RapportCompletView(APIView):
             if servant_id:
                 qs = qs.filter(servant_id=servant_id)
             data['cotisations'] = list(
-                qs.values('servant__nom', 'servant__prenom', 'numero_semaine', 'statut', 'montant')
+                qs.values(
+                    'servant', 'servant__nom', 'servant__prenom',
+                    'annee', 'mois', 'numero_semaine', 'date_debut_semaine', 'statut', 'montant',
+                ).order_by('servant__nom', 'servant__prenom', 'annee', 'mois', 'numero_semaine')
             )
         else:
             data['cotisations'] = []
@@ -117,7 +120,10 @@ class RapportCompletView(APIView):
             if servant_id:
                 qs = qs.filter(servant_id=servant_id)
             data['presences'] = list(
-                qs.values('servant__nom', 'servant__prenom', 'ordre_du_jour__date', 'statut')
+                qs.values(
+                    'servant', 'servant__nom', 'servant__prenom',
+                    'ordre_du_jour__date', 'statut',
+                ).order_by('servant__nom', 'servant__prenom', 'ordre_du_jour__date')
             )
         else:
             data['presences'] = []

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import { adminService } from '../../services/adminService'
-import { programmeService } from '../../services/programmeService'
+import { programmeService } from '../../services/ProgrammeService'
 
 // État initial aligné sur les champs exacts de MesseSerializer
 const initialFormState = {
@@ -161,6 +161,7 @@ export default function PlanifierProgrammePage() {
               <option value="">-- Sélectionner un type --</option>
               <option value="MATINALE">Messe matinale</option>
               <option value="SOIR">Messe du soir</option>
+              <option value="ADORATION">Messe d'adoration</option>
               <option value="AUTRE">Autre</option>
             </select>
           </div>

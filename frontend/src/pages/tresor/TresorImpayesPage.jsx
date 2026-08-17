@@ -10,6 +10,7 @@ export default function TresorImpayesPage() {
   const [impayees, setImpayees] = useState([])
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState(null)
+  const [error, setError] = useState('')
 
   const charger = () => {
     cotisationService
@@ -23,9 +24,12 @@ export default function TresorImpayesPage() {
 
   const handleMarquerPaye = async (id) => {
     setSavingId(id)
+    setError('')
     try {
       await cotisationService.marquerPaye(id)
       setImpayees((prev) => prev.filter((c) => c.id !== id))
+    } catch {
+      setError("Impossible de marquer ce paiement. Réessaie.")
     } finally {
       setSavingId(null)
     }
@@ -36,6 +40,7 @@ export default function TresorImpayesPage() {
       <Header title="Impayés" subtitle="Vue Trésorier" showBack />
 
       <div className="px-5 py-5">
+        {error && <p className="text-danger text-sm font-medium mb-3">{error}</p>}
         {loading && <p className="text-neutral-400 text-sm">Chargement...</p>}
         {!loading && impayees.length === 0 && (
           <EmptyState title="Aucun impayé ce mois-ci" description="La caisse est à jour." />
@@ -44,7 +49,11 @@ export default function TresorImpayesPage() {
           <Table
             columns={[
               { key: 'servant', label: 'Servant', render: (c) => c.servant_nom ?? `Servant #${c.servant}` },
-              { key: 'semaine', label: 'Semaine', render: (c) => `Semaine ${c.numero_semaine}` },
+              {
+                key: 'date',
+                label: 'Date',
+                render: (c) => new Date(c.date_debut_semaine).toLocaleDateString('fr-FR'),
+              },
               {
                 key: 'action',
                 label: '',

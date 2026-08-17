@@ -9,7 +9,7 @@ const CACHE_DUREE_MS = 60 * 1000 // évite de re-fetch à chaque changement de p
 
 let cache = { valeur: null, expireA: 0, cleUtilisateur: null }
 
-async function chargerNotifications(estAdmin) {
+async function chargerNotifications(estAdmin, estServant) {
   const maintenant = Date.now()
 
   const [annonces, ordresDuJour, messages, confirmations] = await Promise.all([
@@ -25,6 +25,7 @@ async function chargerNotifications(estAdmin) {
     id: m.id,
     titre: `Sortie à approuver : ${m.motif}`,
     date: m.created_at,
+    target: '/caisse/confirmations',
   }))
 
   // Une annonce compte tant qu'elle a moins de 7 jours.
@@ -35,6 +36,7 @@ async function chargerNotifications(estAdmin) {
       id: a.id,
       titre: a.titre || a.contenu?.slice(0, 60) || 'Annonce',
       date: a.date_publication,
+      target: estServant ? `/accueil?annonce=${a.id}` : `/admin/programme-annonces?annonce=${a.id}`,
     }))
 
   // Un ordre du jour compte tant que sa date de réunion tombe dans les 7 prochains jours.
@@ -48,6 +50,7 @@ async function chargerNotifications(estAdmin) {
       id: o.id,
       titre: o.titre,
       date: o.date,
+      target: `/calendrier?odj=${o.id}`,
     }))
 
   // Messages : pour l'admin, ceux pas encore traités (peu importe l'âge, il faut y répondre) ;
@@ -55,10 +58,16 @@ async function chargerNotifications(estAdmin) {
   const itemsMessages = estAdmin
     ? messages
         .filter((m) => !m.traite)
-        .map((m) => ({ type: 'message', id: m.id, titre: `${m.auteur_nom} : ${m.sujet}`, date: m.created_at }))
+        .map((m) => ({
+          type: 'message', id: m.id, titre: `${m.auteur_nom} : ${m.sujet}`, date: m.created_at,
+          target: '/parametres/contact-admin',
+        }))
     : messages
         .filter((m) => m.reponse && maintenant - new Date(m.updated_at).getTime() <= SEPT_JOURS_MS)
-        .map((m) => ({ type: 'message', id: m.id, titre: `Réponse : ${m.sujet}`, date: m.updated_at }))
+        .map((m) => ({
+          type: 'message', id: m.id, titre: `Réponse : ${m.sujet}`, date: m.updated_at,
+          target: '/parametres/contact-admin',
+        }))
 
   const items = [...itemsAnnonces, ...itemsOdj, ...itemsMessages, ...itemsConfirmations].sort(
     (a, b) => new Date(b.date) - new Date(a.date)
@@ -71,6 +80,7 @@ async function chargerNotifications(estAdmin) {
 export function useNotifications() {
   const { user } = useAuth()
   const estAdmin = user?.role?.code === 'ADMIN'
+  const estServant = user?.role?.code === 'SERVANT'
   const [items, setItems] = useState(cache.valeur ?? [])
 
   useEffect(() => {
@@ -87,7 +97,7 @@ export function useNotifications() {
         return
       }
       try {
-        const resultat = await chargerNotifications(estAdmin)
+        const resultat = await chargerNotifications(estAdmin, estServant)
         if (!annule) {
           cache = { valeur: resultat, expireA: Date.now() + CACHE_DUREE_MS, cleUtilisateur }
           setItems(resultat)
@@ -105,7 +115,7 @@ export function useNotifications() {
 
     charger()
     return () => { annule = true }
-  }, [user?.id, estAdmin])
+  }, [user?.id, estAdmin, estServant])
 
   return { count: items.length, items }
 }

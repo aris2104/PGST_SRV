@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Header from '../../components/layout/Header'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/common/EmptyState'
-import { CalendarX2 } from 'lucide-react'
+import { CalendarX2, CheckCircle2 } from 'lucide-react'
 import { calendarService } from '../../services/calendarService'
 import { presenceService } from '../../services/presenceService'
 
@@ -31,6 +31,7 @@ export default function EnregistrerPresencePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [succes, setSucces] = useState(null) // null | { odjLabel, counts }
 
   useEffect(() => {
     Promise.all([calendarService.getOrdresDuJour(), presenceService.getServants()])
@@ -59,12 +60,40 @@ export default function EnregistrerPresencePage() {
     setError('')
     try {
       await presenceService.enregistrerAppel(selectedOdj, presences)
-      navigate('/suivis/presences')
+      const odj = ordresDuJour.find((o) => String(o.id) === String(selectedOdj))
+      const counts = Object.values(presences).reduce((acc, s) => {
+        acc[s] = (acc[s] ?? 0) + 1
+        return acc
+      }, {})
+      setSucces({ odjLabel: odj ? `${odj.date} — ${odj.titre}` : '', counts })
     } catch {
       setError("L'enregistrement de l'appel a échoué. Réessaie.")
     } finally {
       setSaving(false)
     }
+  }
+
+  if (succes) {
+    return (
+      <div>
+        <Header title="Faire l'appel" showBack />
+        <div className="px-5 py-10 flex flex-col items-center text-center">
+          <CheckCircle2 size={48} className="text-success mb-4" />
+          <h2 className="font-extrabold text-lg mb-1">Appel enregistré</h2>
+          <p className="text-sm text-neutral-500 mb-2">{succes.odjLabel}</p>
+          <p className="text-xs text-neutral-400 mb-6">
+            {succes.counts.PRESENT ?? 0} présent(s) · {succes.counts.RETARD ?? 0} en retard ·{' '}
+            {succes.counts.PERMISSION ?? 0} permission(s) · {succes.counts.ABSENT ?? 0} absent(s)
+          </p>
+          <div className="w-full max-w-xs flex flex-col gap-3">
+            <Button onClick={() => navigate('/suivis/presences')}>Voir le registre</Button>
+            <Button variant="secondary" onClick={() => navigate('/accueil')}>
+              Retour au dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

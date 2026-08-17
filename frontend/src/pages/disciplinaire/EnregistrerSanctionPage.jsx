@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CheckCircle2 } from 'lucide-react'
 import Header from '../../components/layout/Header'
 import Button from '../../components/ui/Button'
 import { adminService } from '../../services/adminService'
@@ -26,6 +27,7 @@ export default function EnregistrerSanctionPage() {
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [succes, setSucces] = useState(null) // null | { nomServant, type }
 
   useEffect(() => {
     adminService.getMembres().then(setMembres).catch(() => setMembres([]))
@@ -52,12 +54,35 @@ export default function EnregistrerSanctionPage() {
         payload.montant = Number(form.montant)
       }
       await sanctionService.creer(payload)
-      navigate('/disciplinaire/sanctions')
+      const nomServant = membres.find((m) => String(m.id) === String(form.servant))?.nom_complet ?? 'Le membre'
+      const typeLabel = TYPES.find((t) => t.value === form.type_sanction)?.label ?? form.type_sanction
+      setSucces({ nomServant, typeLabel })
     } catch {
       setError("L'enregistrement de la sanction a échoué. Vérifie les champs.")
     } finally {
       setSaving(false)
     }
+  }
+
+  if (succes) {
+    return (
+      <div>
+        <Header title="Enregistrer une sanction" showBack />
+        <div className="px-5 py-10 flex flex-col items-center text-center">
+          <CheckCircle2 size={48} className="text-danger mb-4" />
+          <h2 className="font-extrabold text-lg mb-1">Sanction enregistrée</h2>
+          <p className="text-sm text-neutral-500 mb-6">
+            {succes.typeLabel} appliqué(e) à {succes.nomServant}.
+          </p>
+          <div className="w-full max-w-xs flex flex-col gap-3">
+            <Button onClick={() => navigate('/disciplinaire/sanctions')}>Voir les sanctions</Button>
+            <Button variant="secondary" onClick={() => navigate('/accueil')}>
+              Retour au dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

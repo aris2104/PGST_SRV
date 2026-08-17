@@ -8,7 +8,7 @@ import DisciplinaireDashboard from '../roles-dashboards/DisciplinaireDashboard'
 import OrganisateurDashboard from '../roles-dashboards/OrganisateurDashboard'
 import AdminDashboard from '../roles-dashboards/AdminDashboard'
 import ServantDashboard from '../roles-dashboards/ServantDashboard'
-
+import CeremoniaireDashboard from '../roles-dashboards/CeremoniaireDashboard'
 export default function HomePage() {
   const { user, loading } = useAuth()
 
@@ -59,5 +59,7 @@ export default function HomePage() {
     case 'SERVANT':
     default:
       return <ServantDashboard />
+    case 'CEREMONIAIRE':
+      return <CeremoniaireDashboard />
   }
 }

@@ -4,6 +4,7 @@ Configuration Django du projet PGST (Plateforme de Gestion des Servants).
 from pathlib import Path
 from datetime import timedelta
 from decouple import config, Csv
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -11,11 +12,16 @@ SECRET_KEY = config('SECRET_KEY', default='dev-secret-key-a-changer')
 DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
-INSTALLED_APPS = [
-    # ASGI / WebSockets (Daphne doit être impérativement avant staticfiles)
-    'daphne',
-    'channels',
+# Un DEBUG=True en production serait la pire config possible (stack traces,
+# secrets exposés...). On refuse de démarrer plutôt que de laisser passer
+# cette combinaison par erreur.
+if not DEBUG and SECRET_KEY == 'dev-secret-key-a-changer':
+    raise ImproperlyConfigured(
+        "SECRET_KEY doit être définie explicitement (variable d'environnement) "
+        "dès que DEBUG=False. Ne jamais utiliser la valeur de développement en production."
+    )
 
+INSTALLED_APPS = [
     'django.contrib.admin',
     'apps.activite',
     'django.contrib.auth',
@@ -29,6 +35,7 @@ INSTALLED_APPS = [
     # Tiers
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
 
@@ -72,14 +79,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
-ASGI_APPLICATION = 'config.asgi.application'
-
-# --- Configuration WebSockets / Channels ------------------------------------
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    },
-}
 
 # --- Base de données -------------------------------------------------------
 DATABASES = {
@@ -87,7 +86,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': config('DB_NAME', default='pgst_db'),
         'USER': config('DB_USER', default='postgres'),
-        'PASSWORD': config('DB_PASSWORD', default='Aristide210401'),
+        'PASSWORD': config('DB_PASSWORD', default=''),
         'HOST': config('DB_HOST', default='127.0.0.1'),
         'PORT': config('DB_PORT', default='5432'),
         'client_encoding': 'utf8',
@@ -135,7 +134,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,

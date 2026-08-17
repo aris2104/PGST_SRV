@@ -17,6 +17,7 @@ const LoginPage = lazy(() => import('../pages/auth/LoginPage'))
 // App (onglets)
 const HomePage = lazy(() => import('../pages/home/HomePage'))
 const CalendarPage = lazy(() => import('../pages/calendar/CalendarPage'))
+const ChapeletPage = lazy(() => import('../pages/chapelet/ChapeletPage'))
 const SuivisDashboard = lazy(() => import('../pages/suivis/SuivisDashboard'))
 const SettingsPage = lazy(() => import('../pages/settings/SettingsPage'))
 
@@ -31,6 +32,7 @@ const ProfilPage = lazy(() => import('../pages/settings/ProfilPage'))
 const NotificationsPage = lazy(() => import('../pages/settings/NotificationsPage'))
 const ConfidentialitePage = lazy(() => import('../pages/settings/ConfidentialitePage'))
 const AidePage = lazy(() => import('../pages/settings/AidePage'))
+const TeamPage = lazy(() => import('../pages/settings/TeamPage'))
 const ContactAdminPage = lazy(() => import('../pages/settings/ContactAdminPage'))
 
 // Presi & Secré
@@ -59,13 +61,13 @@ const TresorDashboard = lazy(() => import('../pages/roles-dashboards/TresorDashb
 const DisciplinaireDashboard = lazy(() => import('../pages/roles-dashboards/DisciplinaireDashboard'))
 const OrganisateurDashboard = lazy(() => import('../pages/roles-dashboards/OrganisateurDashboard'))
 const AdminDashboard = lazy(() => import('../pages/roles-dashboards/AdminDashboard'))
-const AdminGroupPage = lazy(() => import('../pages/admin/AdminGroupPage'))
 const AdminCaissePage = lazy(() => import('../pages/admin/AdminCaissePage'))
 const AdminSanctionsPage = lazy(() => import('../pages/admin/AdminSanctionsPage'))
 const AdminProgrammeAnnoncesPage = lazy(() => import('../pages/admin/AdminProgrammeAnnoncesPage'))
 const AdminActivitePage = lazy(() => import('../pages/admin/AdminActivitePage'))
 const RapportPage = lazy(() => import('../pages/admin/RapportPage'))
 const AddMemberPage = lazy(() => import('../pages/members/AddMemberPage'))
+const MembersPage = lazy(() => import('../pages/members/MembersPage'))
 
 // Fallback spinner identique au splash screen
 function PageLoader() {
@@ -96,6 +98,7 @@ export default function AppRoutes() {
       >
         <Route path="/accueil" element={<HomePage />} />
         <Route path="/calendrier" element={<CalendarPage />} />
+        <Route path="/chapelet" element={<ChapeletPage />} />
 
         {/* --- Suivis --- */}
         <Route path="/suivis" element={<SuivisDashboard />} />
@@ -110,9 +113,29 @@ export default function AppRoutes() {
         <Route path="/parametres/notifications" element={<NotificationsPage />} />
         <Route path="/parametres/confidentialite" element={<ConfidentialitePage />} />
         <Route path="/parametres/aide" element={<AidePage />} />
+        <Route path="/parametres/equipe" element={<TeamPage />} />
         <Route path="/parametres/contact-admin" element={<ContactAdminPage />} />
 
         {/* --- Membres --- */}
+        <Route
+          path="/membres"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                ROLES.PRESIDENT,
+                ROLES.SECRETAIRE,
+                ROLES.TRESORIER,
+                ROLES.DISCIPLINAIRE,
+                ROLES.ORGANISATEUR,
+                ROLES.CEREMONIAIRE,
+                ROLES.CONSEILLER,
+                ROLES.ADMIN,
+              ]}
+            >
+              <MembersPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/membres/ajouter"
           element={
@@ -126,7 +149,7 @@ export default function AppRoutes() {
         <Route
           path="/presi-secre/programme"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.CEREMONIAIRE, ROLES.CONSEILLER, ROLES.ADMIN]}>
               <PlanifierProgrammePage />
             </ProtectedRoute>
           }
@@ -163,7 +186,7 @@ export default function AppRoutes() {
         <Route
           path="/disciplinaire/sanctions"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.CEREMONIAIRE, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.CONSEILLER, ROLES.ADMIN]}>
               <DisciplinaireSanctionsPage />
             </ProtectedRoute>
           }
@@ -171,7 +194,7 @@ export default function AppRoutes() {
         <Route
           path="/disciplinaire/enregistrer"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.CEREMONIAIRE, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.CONSEILLER, ROLES.ADMIN]}>
               <EnregistrerSanctionPage />
             </ProtectedRoute>
           }
@@ -221,7 +244,7 @@ export default function AppRoutes() {
         <Route
           path="/caisse/confirmations"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.DISCIPLINAIRE, ROLES.ORGANISATEUR, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.DISCIPLINAIRE, ROLES.ORGANISATEUR, ROLES.CEREMONIAIRE, ROLES.CONSEILLER, ROLES.ADMIN]}>
               <ConfirmationsSortiesPage />
             </ProtectedRoute>
           }
@@ -274,14 +297,14 @@ export default function AppRoutes() {
           path="/admin/groupe"
           element={
             <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-              <AdminGroupPage />
+              <MembersPage />
             </ProtectedRoute>
           }
         />
         <Route
           path="/admin/caisse"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CONSEILLER]}>
               <AdminCaissePage />
             </ProtectedRoute>
           }
@@ -313,7 +336,7 @@ export default function AppRoutes() {
         <Route
           path="/rapport"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.TRESORIER]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.TRESORIER, ROLES.CONSEILLER]}>
               <RapportPage />
             </ProtectedRoute>
           }
