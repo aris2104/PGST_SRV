@@ -22,7 +22,7 @@ from apps.cotisations.models import Cotisation
 from apps.calendrier.models import Presence
 from apps.caisse.models import MouvementCaisse
 
-ROLES_AUTORISES_RAPPORT = ('PRESIDENT', 'SECRETAIRE', 'TRESORIER', 'CONSEILLER', 'ADMIN')
+ROLES_AUTORISES_RAPPORT = ('PRESIDENT', 'SECRETAIRE', 'TRESORIER', 'CONSEILLER', 'ADMIN', 'SUPER_ADMIN', 'DISCIPLINAIRE', 'ORGANISATEUR', 'CEREMONIAIRE')
 TOUTES_LES_SECTIONS = {'cotisations', 'sanctions', 'presences', 'mouvements'}
 
 

@@ -34,10 +34,18 @@ export default function EnregistrerPresencePage() {
   const [succes, setSucces] = useState(null) // null | { odjLabel, counts }
 
   useEffect(() => {
-    Promise.all([calendarService.getOrdresDuJour(), presenceService.getServants()])
+    Promise.all([
+      calendarService.getOrdresDuJour().catch(() => []),
+      presenceService.getServants().catch(() => []),
+    ])
       .then(([odjList, servantsList]) => {
-        setOrdresDuJour(odjList)
-        setServants(servantsList)
+        const liste = Array.isArray(odjList) ? odjList : odjList?.results ?? []
+        // On ne propose que les réunions déjà arrivées (aujourd'hui inclus) :
+        // impossible de faire l'appel pour une réunion à venir.
+        const aujourdHui = new Date().toISOString().split('T')[0]
+        const passees = liste.filter((odj) => (odj.date || '').slice(0, 10) <= aujourdHui)
+        setOrdresDuJour(passees)
+        setServants(Array.isArray(servantsList) ? servantsList : servantsList?.results ?? [])
       })
       .catch(() => setError("Impossible de charger l'ordre du jour ou la liste des servants."))
       .finally(() => setLoading(false))
@@ -45,9 +53,16 @@ export default function EnregistrerPresencePage() {
 
   const handleSelectOdj = (id) => {
     setSelectedOdj(id)
-    // Par défaut, tout le monde est marqué présent — le bureau ajuste les exceptions.
+    if (!id) {
+      setPresences({})
+      return
+    }
+
+    // Initialiser tous les servants à 'PRESENT' par défaut pour garantir la soumission complète
     const initial = {}
-    servants.forEach((s) => { initial[s.id] = 'PRESENT' })
+    servants.forEach((s) => {
+      initial[s.id] = 'PRESENT'
+    })
     setPresences(initial)
   }
 
@@ -56,18 +71,24 @@ export default function EnregistrerPresencePage() {
   }
 
   const handleSubmit = async () => {
+    if (!selectedOdj) return
     setSaving(true)
     setError('')
     try {
-      await presenceService.enregistrerAppel(selectedOdj, presences)
       const odj = ordresDuJour.find((o) => String(o.id) === String(selectedOdj))
+      const label = odj ? `Appel — ${odj.date} — ${odj.titre}` : ''
+      const resultat = await presenceService.enregistrerAppel(selectedOdj, presences, label)
       const counts = Object.values(presences).reduce((acc, s) => {
         acc[s] = (acc[s] ?? 0) + 1
         return acc
       }, {})
-      setSucces({ odjLabel: odj ? `${odj.date} — ${odj.titre}` : '', counts })
+      setSucces({
+        odjLabel: odj ? `${odj.date} — ${odj.titre}` : '',
+        counts,
+        enAttente: resultat.queued === true,
+      })
     } catch {
-      setError("L'enregistrement de l'appel a échoué. Réessaie.")
+      setError("Cette réunion date de plus de 7 jours : il n'est plus possible d'y toucher. Seul un administrateur peut encore corriger.")
     } finally {
       setSaving(false)
     }
@@ -78,8 +99,15 @@ export default function EnregistrerPresencePage() {
       <div>
         <Header title="Faire l'appel" showBack />
         <div className="px-5 py-10 flex flex-col items-center text-center">
-          <CheckCircle2 size={48} className="text-success mb-4" />
-          <h2 className="font-extrabold text-lg mb-1">Appel enregistré</h2>
+          <CheckCircle2 size={48} className={succes.enAttente ? 'text-info mb-4' : 'text-success mb-4'} />
+          <h2 className="font-extrabold text-lg mb-1">
+            {succes.enAttente ? 'Appel enregistré localement' : 'Appel enregistré'}
+          </h2>
+          {succes.enAttente && (
+            <p className="text-xs text-info font-semibold mb-2 max-w-xs">
+              Pas de connexion pour le moment : il sera envoyé automatiquement dès que le réseau revient.
+            </p>
+          )}
           <p className="text-sm text-neutral-500 mb-2">{succes.odjLabel}</p>
           <p className="text-xs text-neutral-400 mb-6">
             {succes.counts.PRESENT ?? 0} présent(s) · {succes.counts.RETARD ?? 0} en retard ·{' '}
@@ -120,7 +148,7 @@ export default function EnregistrerPresencePage() {
               <select
                 value={selectedOdj}
                 onChange={(e) => handleSelectOdj(e.target.value)}
-                className="w-full px-4 py-3 rounded-md bg-white border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-navy"
+                className="w-full px-4 py-3 rounded-md bg-white border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-navy text-sm font-medium"
               >
                 <option value="">Choisir une date / un ordre du jour</option>
                 {ordresDuJour.map((odj) => (
@@ -136,7 +164,7 @@ export default function EnregistrerPresencePage() {
                 <div className="flex flex-col gap-3 mb-5">
                   {servants.map((s) => (
                     <div key={s.id} className="bg-card rounded-card shadow-card p-3">
-                      <p className="font-bold text-sm mb-2">{s.nom_complet}</p>
+                      <p className="font-bold text-sm mb-2">{s.nom_complet || s.username}</p>
                       <div className="flex gap-2 flex-wrap">
                         {STATUTS.map((st) => {
                           const active = presences[s.id] === st.value

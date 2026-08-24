@@ -28,6 +28,12 @@ export default function DisciplinaireDashboard() {
 
       <div className="px-5 py-5">
         <WelcomeVerset prenom={user?.prenom} />
+        <button
+  onClick={() => navigate('/rapport')}
+  className="w-full py-3.5 px-4 bg-slate-700 text-white text-sm font-bold rounded-2xl shadow-sm hover:bg-slate-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+>
+  Consulter le rapport global
+</button>
 
         <Card
           onClick={() => navigate('/disciplinaire/sanctions')}

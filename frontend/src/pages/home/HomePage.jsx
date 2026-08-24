@@ -9,6 +9,7 @@ import OrganisateurDashboard from '../roles-dashboards/OrganisateurDashboard'
 import AdminDashboard from '../roles-dashboards/AdminDashboard'
 import ServantDashboard from '../roles-dashboards/ServantDashboard'
 import CeremoniaireDashboard from '../roles-dashboards/CeremoniaireDashboard'
+import ConseillerDashboard from '../roles-dashboards/ConseillerDashboard'
 export default function HomePage() {
   const { user, loading } = useAuth()
 
@@ -35,7 +36,7 @@ export default function HomePage() {
   }
 
   const roleCode = String(rawRole).trim().toUpperCase()
-  console.log('🎯 ROLE CODE CALCULÉ :', roleCode)
+  console.log(' ROLE CODE CALCULÉ :', roleCode)
 
   // 4. Aiguillage selon le rôle
   switch (roleCode) {
@@ -54,12 +55,16 @@ export default function HomePage() {
 
     case 'ADMIN':
     case 'SUPERADMIN':
+    case 'SUPER_ADMIN':
       return <AdminDashboard />
 
+    case 'CEREMONIAIRE':
+      return <CeremoniaireDashboard />
+
+    case 'CONSEILLER':
+      return <ConseillerDashboard />
     case 'SERVANT':
     default:
       return <ServantDashboard />
-    case 'CEREMONIAIRE':
-      return <CeremoniaireDashboard />
   }
 }

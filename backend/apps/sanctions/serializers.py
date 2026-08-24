@@ -12,7 +12,7 @@ class SanctionSerializer(serializers.ModelSerializer):
         model = Sanction
         fields = [
             'id', 'servant', 'servant_nom', 'type_sanction', 'type_sanction_display', 'motif',
-            'date_decision', 'duree_jours', 'date_fin', 'montant',
+            'date_decision', 'duree_jours', 'date_fin', 'montant', 'amende_payee',
             'statut', 'statut_display', 'decidee_par', 'decidee_par_nom', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']

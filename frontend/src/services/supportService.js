@@ -1,4 +1,5 @@
 import api from './api'
+import { envoyerOuMettreEnAttente } from './offlineQueue'
 
 export const supportService = {
   async getMesMessages() {
@@ -7,13 +8,21 @@ export const supportService = {
   },
 
   async envoyerMessage(sujet, contenu) {
-    const { data } = await api.post('/support/messages/', { sujet, contenu })
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'post',
+      url: '/support/messages/',
+      data: { sujet, contenu },
+      label: `Message support — ${sujet}`,
+    })
   },
 
   /** Réservé à l'Admin */
   async repondreMessage(id, reponse) {
-    const { data } = await api.patch(`/support/messages/${id}/`, { reponse })
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'patch',
+      url: `/support/messages/${id}/`,
+      data: { reponse },
+      label: `Réponse au message #${id}`,
+    })
   },
 }

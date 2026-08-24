@@ -15,8 +15,15 @@ function ReponseForm({ message, onReponduAvecSucces }) {
     setEnvoi(true)
     setError('')
     try {
-      const updated = await supportService.repondreMessage(message.id, reponse)
-      onReponduAvecSucces(updated)
+      const resultat = await supportService.repondreMessage(message.id, reponse)
+      if (resultat.queued) {
+        // Hors-ligne : on affiche la réponse tout de suite dans la liste
+        // (optimiste), elle sera confirmée dès le retour du réseau.
+        onReponduAvecSucces({ ...message, reponse, _enAttente: true })
+        setError('') // pas une vraie erreur, mais on pourrait afficher un message dédié si besoin
+      } else {
+        onReponduAvecSucces(resultat.data)
+      }
     } catch {
       setError("L'envoi a échoué. Réessaie.")
     } finally {

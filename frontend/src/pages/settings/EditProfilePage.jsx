@@ -19,14 +19,25 @@ export default function EditProfilePage() {
 
   const handleChange = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
 
+  const [info, setInfo] = useState('')
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
     setError('')
+    setInfo('')
     try {
-      const updated = await userService.updateMe(form)
-      updateUser(updated)
-      navigate('/parametres')
+      const resultat = await userService.updateMe(form)
+      if (resultat.queued) {
+        // Hors-ligne : on applique les nouvelles infos localement tout de
+        // suite (optimiste), l'envoi réel se fera au retour du réseau.
+        updateUser({ ...user, ...form })
+        setInfo("Pas de connexion : ces infos seront envoyées dès le retour du réseau.")
+        setTimeout(() => navigate('/parametres'), 1200)
+      } else {
+        updateUser(resultat.data)
+        navigate('/parametres')
+      }
     } catch {
       setError("La mise à jour a échoué. Vérifie les champs et réessaie.")
     } finally {
@@ -70,6 +81,7 @@ export default function EditProfilePage() {
         </label>
 
         {error && <p className="text-danger text-sm font-medium mb-4">{error}</p>}
+        {info && <p className="text-info text-sm font-medium mb-4">{info}</p>}
 
         <Button type="submit" disabled={saving} className="mt-4">
           {saving ? 'Enregistrement...' : 'Enregistrer'}

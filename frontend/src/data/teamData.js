@@ -22,14 +22,23 @@ export const EQUIPE = [
     role: 'Développeur',
     categorie: CATEGORIES.DEV,
     photo: null, // ex: '/team/prenom-nom.jpg'
-    bio: '',
+    bio: 'Biologiste, ingénieur cyber-sécurité et membre du groupe des servants de messe de togblé, Bimam a développé l\'application pour faciliter la gestion des activités du groupe et améliorer la communication entre les servants.',
   },
   {
     id: 2,
     nom: 'Ignace AGBO TCHAA',
     role: 'Développeur ',
+    categorie: CATEGORIES.DEV,
+    photo: null,
+    bio: 'Ingénieur Cyber-Sécurité et membre du groupe des servants de messe de togblé, Ignace a développé l\'application pour faciliter la gestion des activités du groupe et améliorer la communication entre les servants.',
+  },
+
+  {
+    id: 3,
+    nom: 'Clives AGBO',
+    role: 'Testeur & Conformité',
     categorie: CATEGORIES.TEST,
     photo: null,
-    bio: '',
+    bio: 'Médecin et membre du groupe des servants de messe de togblé, Clives a testé l\'application pour s\’assurer qu\’elle répond aux besoins des servants et qu\’elle est conforme aux règles de confidentialité.',
   },
 ]

@@ -2,17 +2,14 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import { registerSW } from 'virtual:pwa-register'
 
+// Enregistrement immédiat du Service Worker (Gestion Hors-ligne & PWA)
+registerSW({ immediate: true })
+
+// Rendu de l'application React dans le DOM
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
 )
-// Enregistrement du service worker - active le bouton "Installer" sur Chrome/Android
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.warn('Échec de l\'enregistrement du service worker :', err)
-    })
-  })
-}

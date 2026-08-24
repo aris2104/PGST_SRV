@@ -17,25 +17,20 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('fr-FR')
 }
 
-/** Liste de détails générique affichée dans les modales de tuiles (même
- * composant que sur le dashboard Trésorier, pour rester cohérent). */
-function DetailList({ mouvements, emptyLabel }) {
-  if (!mouvements.length) {
+function DetailList({ items, emptyLabel }) {
+  if (!items.length) {
     return <p className="text-sm text-neutral-400">{emptyLabel}</p>
   }
   return (
     <div className="flex flex-col gap-2">
-      {mouvements.map((m) => (
-        <div key={m.id} className="flex items-center justify-between border-b border-neutral-100 pb-2 last:border-0">
+      {items.map((m) => (
+        <div key={m.key} className="flex items-center justify-between border-b border-neutral-100 pb-2 last:border-0">
           <div>
             <p className="text-sm font-bold">{m.motif}</p>
-            <p className="text-xs text-neutral-400">
-              {formatDate(m.date)} · {m.initiee_par_nom || 'Trésorier'}
-            </p>
-            {m.description && <p className="text-xs text-neutral-500 mt-0.5">{m.description}</p>}
+            <p className="text-xs text-neutral-400">{formatDate(m.date)} · {m.origine}</p>
           </div>
-          <p className={`text-sm font-black ${m.type_mouvement === 'ENTREE' ? 'text-success' : 'text-danger'}`}>
-            {m.type_mouvement === 'ENTREE' ? '+' : '−'}{formatMontant(m.montant)}
+          <p className={`text-sm font-black ${m.sens === 'ENTREE' ? 'text-success' : 'text-danger'}`}>
+            {m.sens === 'ENTREE' ? '+' : '−'}{formatMontant(m.montant)}
           </p>
         </div>
       ))}
@@ -44,14 +39,15 @@ function DetailList({ mouvements, emptyLabel }) {
 }
 
 // Caisse — vue Admin/Conseiller : mêmes tuiles Entrées/Sorties/Solde que le
-// dashboard Trésorier (mouvements de caisse), PLUS le suivi des cotisations
-// impayées du mois. Avant, cette page ne montrait que les cotisations —
-// incohérent avec "voir toute la caisse" pour ces deux rôles.
+// dashboard Trésorier, calculées par la même source de vérité unique
+// (/caisse/mouvements/solde/), PLUS le suivi des cotisations impayées du mois.
 export default function AdminCaissePage() {
   const today = new Date()
   const [cotisations, setCotisations] = useState([])
   const [loadingCotisations, setLoadingCotisations] = useState(true)
   const [mouvements, setMouvements] = useState(null)
+  const [cotisationsPayees, setCotisationsPayees] = useState(null)
+  const [solde, setSolde] = useState(null)
   const [modalOuverte, setModalOuverte] = useState(null) // 'entrees' | 'sorties' | 'solde' | null
 
   useEffect(() => {
@@ -62,17 +58,41 @@ export default function AdminCaissePage() {
       .finally(() => setLoadingCotisations(false))
 
     caisseService.getMouvements().then(setMouvements).catch(() => setMouvements([]))
+    cotisationService.getToutesPayees().then(setCotisationsPayees).catch(() => setCotisationsPayees([]))
+    caisseService.getSolde().then(setSolde).catch(() => setSolde(null))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const impayees = cotisations.filter((c) => c.statut === 'IMPAYE')
+  const chargementCaisse = mouvements === null || cotisationsPayees === null || solde === null
 
-  const entrees = (mouvements ?? []).filter((m) => m.type_mouvement === 'ENTREE')
-  const sorties = (mouvements ?? []).filter((m) => m.type_mouvement === 'SORTIE' && m.statut_global === 'CONFIRME')
-  const totalEntrees = entrees.reduce((s, m) => s + parseFloat(m.montant), 0)
-  const totalSorties = sorties.reduce((s, m) => s + parseFloat(m.montant), 0)
-  const solde = totalEntrees - totalSorties
-  const chargementMouvements = mouvements === null
+  const detailEntrees = chargementCaisse
+    ? []
+    : [
+        ...mouvements
+          .filter((m) => m.type_mouvement === 'ENTREE')
+          .map((m) => ({
+            key: `mvt-${m.id}`, motif: m.motif, date: m.date, montant: m.montant,
+            origine: m.initiee_par_nom || 'Trésorier', sens: 'ENTREE',
+          })),
+        ...cotisationsPayees.map((c) => ({
+          key: `cot-${c.id}`,
+          motif: `Cotisation — ${c.servant_nom ?? 'Servant #' + c.servant}`,
+          date: c.date_paiement ?? c.date_debut_semaine,
+          montant: c.montant,
+          origine: 'Cotisation hebdomadaire',
+          sens: 'ENTREE',
+        })),
+      ].sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  const detailSorties = chargementCaisse
+    ? []
+    : mouvements
+        .filter((m) => m.type_mouvement === 'SORTIE' && m.statut_global === 'CONFIRME')
+        .map((m) => ({
+          key: `srt-${m.id}`, motif: m.motif, date: m.date, montant: m.montant,
+          origine: m.initiee_par_nom || 'Trésorier', sens: 'SORTIE',
+        }))
 
   return (
     <div>
@@ -84,19 +104,19 @@ export default function AdminCaissePage() {
           <Card className="p-3 bg-white border border-neutral-200" onClick={() => setModalOuverte('solde')}>
             <p className="text-[10px] font-extrabold text-neutral-400 uppercase">Solde actuel</p>
             <p className="text-lg font-black text-neutral-800 mt-1">
-              {chargementMouvements ? '...' : formatMontant(solde)}
+              {chargementCaisse ? '...' : formatMontant(solde.solde)}
             </p>
           </Card>
           <Card className="p-3 bg-white border border-neutral-200" onClick={() => setModalOuverte('entrees')}>
             <p className="text-[10px] font-extrabold text-neutral-400 uppercase">Entrées</p>
             <p className="text-lg font-black text-success mt-1">
-              {chargementMouvements ? '...' : formatMontant(totalEntrees)}
+              {chargementCaisse ? '...' : formatMontant(solde.total_entrees)}
             </p>
           </Card>
           <Card className="p-3 bg-white border border-neutral-200" onClick={() => setModalOuverte('sorties')}>
             <p className="text-[10px] font-extrabold text-neutral-400 uppercase">Sorties</p>
             <p className="text-lg font-black text-danger mt-1">
-              {chargementMouvements ? '...' : formatMontant(totalSorties)}
+              {chargementCaisse ? '...' : formatMontant(solde.total_sorties)}
             </p>
           </Card>
           <Card className="p-3 bg-white border border-neutral-200">
@@ -131,28 +151,35 @@ export default function AdminCaissePage() {
       </div>
 
       <Modal open={modalOuverte === 'entrees'} title="Détail des entrées" onClose={() => setModalOuverte(null)}>
-        <DetailList mouvements={entrees} emptyLabel="Aucune entrée enregistrée." />
+        <p className="text-xs text-neutral-400 mb-3">Dons/divers + cotisations hebdomadaires payées + amendes encaissées.</p>
+        <DetailList items={detailEntrees} emptyLabel="Aucune entrée enregistrée." />
       </Modal>
 
       <Modal open={modalOuverte === 'sorties'} title="Détail des sorties" onClose={() => setModalOuverte(null)}>
-        <DetailList mouvements={sorties} emptyLabel="Aucune sortie confirmée." />
+        <DetailList items={detailSorties} emptyLabel="Aucune sortie confirmée." />
       </Modal>
 
       <Modal open={modalOuverte === 'solde'} title="Composition du solde" onClose={() => setModalOuverte(null)}>
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-neutral-500">Total des entrées</p>
-            <p className="text-sm font-bold text-success">{formatMontant(totalEntrees)}</p>
+        {!chargementCaisse && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-neutral-500">Dons / divers</p>
+              <p className="text-sm font-bold text-success">{formatMontant(solde.total_entrees_mouvements)}</p>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-neutral-500">Cotisations hebdomadaires payées</p>
+              <p className="text-sm font-bold text-success">{formatMontant(solde.total_cotisations)}</p>
+            </div>
+            <div className="flex items-center justify-between border-t border-neutral-100 pt-3">
+              <p className="text-sm text-neutral-500">Total des sorties confirmées</p>
+              <p className="text-sm font-bold text-danger">− {formatMontant(solde.total_sorties)}</p>
+            </div>
+            <div className="flex items-center justify-between border-t border-neutral-200 pt-3">
+              <p className="text-sm font-extrabold">Solde actuel de la caisse</p>
+              <p className="text-base font-black">{formatMontant(solde.solde)}</p>
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-neutral-500">Total des sorties confirmées</p>
-            <p className="text-sm font-bold text-danger">− {formatMontant(totalSorties)}</p>
-          </div>
-          <div className="flex items-center justify-between border-t border-neutral-200 pt-3">
-            <p className="text-sm font-extrabold">Solde actuel de la caisse</p>
-            <p className="text-base font-black">{formatMontant(solde)}</p>
-          </div>
-        </div>
+        )}
       </Modal>
     </div>
   )

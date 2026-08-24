@@ -7,7 +7,57 @@ html, body, #root {
 }
 
 body {
-  @apply text-neutral-800 antialiased;
+  @apply text-neutral-800 antialiased dark:text-neutral-100;
+}
+
+/* ------------------------------------------------------------------ */
+/* MODE NUIT — bascule globale et simple                              */
+/* ------------------------------------------------------------------ */
+/* Plutôt que d'ajouter "dark:" à chaque page une par une (des         */
+/* centaines d'endroits), on bascule ici, en une seule fois, les       */
+/* classes de fond et de texte les plus utilisées dans toute l'app.    */
+/* Dès que <html> a l'attribut data-theme="dark" (posé par             */
+/* ThemeContext), TOUT ce qui utilise ces classes change de couleur    */
+/* automatiquement, partout, sans modifier le JSX de chaque écran.     */
+
+[data-theme="dark"] body {
+  background-color: #0f172a; /* slate-900 */
+}
+
+/* Fonds clairs (cartes, écrans, listes) → fonds sombres */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-surface,
+[data-theme="dark"] .bg-neutral-50,
+[data-theme="dark"] .bg-neutral-100,
+[data-theme="dark"] .bg-card {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+/* Textes sombres → textes clairs, partout */
+[data-theme="dark"] .text-neutral-800,
+[data-theme="dark"] .text-neutral-700,
+[data-theme="dark"] .text-neutral-600 {
+  color: #f1f5f9 !important; /* slate-100 */
+}
+[data-theme="dark"] .text-neutral-500,
+[data-theme="dark"] .text-neutral-400 {
+  color: #94a3b8 !important; /* slate-400, reste lisible sans être criard */
+}
+
+/* Bordures/séparateurs clairs → sombres, pour rester visibles */
+[data-theme="dark"] .border-neutral-100,
+[data-theme="dark"] .border-neutral-200,
+[data-theme="dark"] .border-neutral-300 {
+  border-color: #334155 !important; /* slate-700 */
+}
+
+/* Les inputs/selects gardent un fond légèrement différent des cartes */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  border-color: #334155;
 }
 
 /* Empêche le zoom involontaire sur mobile lors du focus d'un input */

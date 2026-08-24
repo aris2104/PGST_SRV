@@ -1,4 +1,5 @@
 import api from './api'
+import { envoyerOuMettreEnAttente } from './offlineQueue'
 
 export const adminService = {
   async getMembres() {
@@ -7,18 +8,30 @@ export const adminService = {
   },
 
   async creerMembre(payload) {
-    const { data } = await api.post('/users/', payload)
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'post',
+      url: '/users/',
+      data: payload,
+      label: `Nouveau membre — ${payload?.nom_complet || payload?.matricule || ''}`,
+    })
   },
 
   async changerRole(userId, roleId) {
-    const { data } = await api.patch(`/users/${userId}/`, { role: roleId })
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'patch',
+      url: `/users/${userId}/`,
+      data: { role: roleId },
+      label: `Changement de rôle — membre #${userId}`,
+    })
   },
 
   async toggleActif(userId, isActive) {
-    const { data } = await api.patch(`/users/${userId}/`, { is_active: isActive })
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'patch',
+      url: `/users/${userId}/`,
+      data: { is_active: isActive },
+      label: `${isActive ? 'Réactivation' : 'Désactivation'} — membre #${userId}`,
+    })
   },
 
   async getActiviteRecente(page = 1, pageSize = 30, filtres = {}) {

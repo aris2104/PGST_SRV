@@ -8,6 +8,7 @@ import { programmeService } from '../../services/ProgrammeService'
 // État initial aligné sur les champs exacts de MesseSerializer
 const initialFormState = {
   type_messe: '',
+  nom_personnalise: '',
   date: '',
   heure: '',
   lieu: '',
@@ -86,9 +87,16 @@ export default function PlanifierProgrammePage() {
       return
     }
 
+    if (form.type_messe === 'AUTRE' && !form.nom_personnalise.trim()) {
+      setError("Merci de préciser le nom de la messe (elle n'est pas dans la liste).")
+      setSaving(false)
+      return
+    }
+
     // 2. Payload parfaitement conforme à MesseSerializer
     const payload = {
       type_messe: form.type_messe,
+      nom_personnalise: form.type_messe === 'AUTRE' ? form.nom_personnalise.trim() : '',
       date: form.date,
       heure: form.heure,
       lieu: form.lieu,
@@ -162,9 +170,28 @@ export default function PlanifierProgrammePage() {
               <option value="MATINALE">Messe matinale</option>
               <option value="SOIR">Messe du soir</option>
               <option value="ADORATION">Messe d'adoration</option>
-              <option value="AUTRE">Autre</option>
+              <option value="AUTRE">Autre (nom pas encore dans la liste)</option>
             </select>
           </div>
+
+          {/* Nom libre : uniquement si la messe n'est pas dans la liste fermée */}
+          {form.type_messe === 'AUTRE' && (
+            <div>
+              <label htmlFor="nom_personnalise" className="block text-sm font-semibold text-neutral-700 mb-1.5">
+                Nom de la messe
+              </label>
+              <input
+                id="nom_personnalise"
+                name="nom_personnalise"
+                type="text"
+                required
+                placeholder="Ex: Messe des malades, Neuvaine de la Pentecôte..."
+                value={form.nom_personnalise}
+                onChange={handleChange('nom_personnalise')}
+                className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+          )}
 
           {/* Date & Heure */}
           <div className="grid grid-cols-2 gap-3">

@@ -9,6 +9,7 @@ class AnnonceSerializer(serializers.ModelSerializer):
         model = Annonce
         fields = [
             'id', 'titre', 'contenu', 'portee', 'portee_display',
-            'destinataire', 'publiee_par', 'date_publication',
+            'destinataires', 'publiee_par', 'date_publication',
         ]
         read_only_fields = ['id', 'publiee_par', 'date_publication']
+        extra_kwargs = {'destinataires': {'required': False}}

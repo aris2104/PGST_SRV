@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Cotisation
 from .serializers import CotisationSerializer
+from .services import assurer_cotisations_dues, assurer_cotisations_dues_pour_tous
 from utils.permissions import is_admin_user
 
 
@@ -57,12 +58,19 @@ class CotisationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Cotisation.objects.select_related('servant')
-        # Le Conseiller voit tout (sauf les logs, gérés ailleurs) sans pour
-        # autant pouvoir enregistrer un paiement : c'est un droit de lecture.
+        # Auto-génère (si besoin) les lignes IMPAYE des semaines dues, sans
+        # dépendre d'une tâche planifiée externe. Voir services.py.
         is_privileged = user.is_staff or (
             user.role and user.role.code in ('TRESORIER', 'ADMIN', 'SUPER_ADMIN', 'CONSEILLER')
         )
+        if is_privileged:
+            assurer_cotisations_dues_pour_tous()
+        else:
+            assurer_cotisations_dues(user)
+
+        qs = Cotisation.objects.select_related('servant')
+        # Le Conseiller voit tout (sauf les logs, gérés ailleurs) sans pour
+        # autant pouvoir enregistrer un paiement : c'est un droit de lecture.
         if not is_privileged:
             qs = qs.filter(servant=user)
         return qs
@@ -84,6 +92,10 @@ class CotisationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def resume(self, request):
         """Progression du mois en cours + cumul annuel (X/48 semaines payées)."""
+        # Même logique d'auto-génération que get_queryset : cette action
+        # personnalisée ne passe pas par get_queryset, donc on la répète ici.
+        assurer_cotisations_dues(request.user)
+
         today = date.today()
         qs_mois = Cotisation.objects.filter(
             servant=request.user, annee=today.year, mois=today.month,

@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import authenticate
+from rest_framework.exceptions import AuthenticationFailed
 from apps.roles.serializers import RoleSerializer
 from .models import User, NotificationPreference
 
@@ -50,8 +52,6 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
         fields = ['matricule', 'nom', 'prenom', 'telephone', 'membre_depuis', 'role', 'password']
 
     def validate_password(self, value):
-        # Branche réellement AUTH_PASSWORD_VALIDATORS (settings.py) — sans
-        # cet appel explicite, DRF ne les applique jamais automatiquement.
         validate_password(value)
         return value
 
@@ -104,9 +104,42 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     Login par matricule + mot de passe. Renvoie les tokens JWT
     ainsi que le profil complet pour éviter un second appel après connexion.
     """
-    username_field = User.USERNAME_FIELD
+    matricule = serializers.CharField(required=False, write_only=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.username_field in self.fields:
+            self.fields[self.username_field].required = False
 
     def validate(self, attrs):
-        data = super().validate(attrs)
-        data['user'] = UserSerializer(self.user).data
-        return data
+        identifier = attrs.get('matricule') or attrs.get(self.username_field)
+        password = attrs.get('password')
+
+        if not identifier or not password:
+            raise serializers.ValidationError("Le matricule et le mot de passe sont requis.")
+
+        user = authenticate(
+            request=self.context.get('request'),
+            username=identifier,
+            password=password
+        ) or authenticate(
+            request=self.context.get('request'),
+            matricule=identifier,
+            password=password
+        )
+
+        if not user:
+            raise AuthenticationFailed("Matricule ou mot de passe incorrect.")
+
+        if not user.is_active:
+            raise AuthenticationFailed("Ce compte est désactivé.")
+
+        self.user = user
+
+        refresh = self.get_token(self.user)
+
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': UserSerializer(self.user).data
+        }

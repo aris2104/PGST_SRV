@@ -31,6 +31,10 @@ class Sanction(models.Model):
     duree_jours = models.PositiveIntegerField(null=True, blank=True, help_text="Pour une suspension")
     date_fin = models.DateField(null=True, blank=True)
     montant = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Pour une amende")
+    amende_payee = models.BooleanField(
+        default=False,
+        help_text="Passe à True quand le Trésorier encaisse l'amende — génère alors une entrée de caisse.",
+    )
     statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.ACTIVE)
     decidee_par = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,

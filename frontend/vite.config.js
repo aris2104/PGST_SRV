@@ -6,30 +6,43 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      strategies: 'injectManifest',
-      srcDir: 'public',
+      strategies: 'injectManifest', // Active votre Service Worker sur mesure
+      srcDir: 'src',                // Emplacement de votre sw.js source
       filename: 'sw.js',
+      registerType: 'autoUpdate',
       devOptions: {
-        enabled: true,
+        enabled: true,               // Génère dev-dist/sw.js au lancement
         type: 'module',
       },
-      includeAssets: ['favicon-32.png', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.ico', 'favicon-96x96.png', 'favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'PGST - Gestion des Servants',
         short_name: 'PGST',
         description: 'Plateforme de Gestion des Servants',
         theme_color: '#24365A',
-        background_color: '#ede6df',
+        background_color: '#24365A',
         display: 'standalone',
+        orientation: 'portrait',
         scope: '/',
         start_url: '/',
-icons: [
-  { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-  { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-  { src: '/icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-],
+        icons: [
+          {
+            src: '/web-app-manifest-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: '/web-app-manifest-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
       },
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+      }
     }),
   ],
   server: {
@@ -37,7 +50,6 @@ icons: [
     allowedHosts: true,
     port: 5173,
     cors: true,
-    //  REDIRECTION DE L'API VERS DJANGO
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

@@ -25,15 +25,4 @@ class MouvementCaisseSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'initiee_par', 'created_at']
 
     def get_statut_global(self, obj):
-        """Pour une SORTIE : EN_ATTENTE / CONFIRME (unanimité) / DECLINE (au moins un refus).
-        Une ENTREE n'a pas de workflow de validation, donc pas de statut."""
-        if obj.type_mouvement == MouvementCaisse.Type.ENTREE:
-            return None
-        decisions = [c.decision for c in obj.confirmations.all()]
-        if not decisions:
-            return 'CONFIRME'  # aucun autre membre du bureau à consulter
-        if 'DECLINE' in decisions:
-            return 'DECLINE'
-        if all(d == 'CONFIRME' for d in decisions):
-            return 'CONFIRME'
-        return 'EN_ATTENTE'
+        return obj.statut_global

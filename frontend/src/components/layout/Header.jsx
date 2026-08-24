@@ -14,12 +14,25 @@ export default function Header({ title, subtitle, showBack = false, onBack }) {
   const [panelOuvert, setPanelOuvert] = useState(false)
   const { count: badgeCount, items } = useNotifications()
 
-  useEffect(() => {
-    // Vérifie au chargement si la permission est déjà accordée
-    if ('Notification' in window && window.Notification.permission === 'granted') {
-      setIsSubscribed(true)
+ useEffect(() => {
+  const checkPushSubscription = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return
     }
-  }, [])
+
+    try {
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+
+      setIsSubscribed(!!subscription)
+    } catch (error) {
+      console.error('Erreur lors de la vérification de l’abonnement Push :', error)
+      setIsSubscribed(false)
+    }
+  }
+
+  checkPushSubscription()
+}, [])
 
   const handleBack = () => {
     if (onBack) return onBack()

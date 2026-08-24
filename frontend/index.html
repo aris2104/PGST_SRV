@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
     
+    <!-- CSP permissive compatible Tunnels Cloudflare & Dev -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' http: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' http: https:; style-src 'self' 'unsafe-inline' http: https:; connect-src 'self' http: https: ws: wss:; img-src 'self' data: blob: http: https:;"
+    />
+
     <!-- Couleurs d'interface et d'application -->
     <meta name="theme-color" content="#24365A" />
     <meta name="description" content="Plateforme de Gestion des Servants" />
@@ -21,12 +27,24 @@
     <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- Icônes -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
     <title>PGST - Gestion des Servants</title>
+
+    <!-- Applique le mode nuit AVANT le premier rendu -->
+    <script>
+      (function () {
+        try {
+          var stockee = localStorage.getItem('pgst-theme');
+          var estSombre = stockee === 'dark' || (!stockee && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (estSombre) document.documentElement.setAttribute('data-theme', 'dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-surface">
+  <body class="bg-surface dark:bg-slate-900">
     <div id="root"></div>
     <div
       id="splash"

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { authService } from '../services/authService'
 import { userService } from '../services/userService'
+import { prechargerDonneesHorsLigne } from '../services/offlinePrefetch'
 
 const AuthContext = createContext(null)
 
@@ -15,6 +16,9 @@ export function AuthProvider({ children }) {
         try {
           const freshUser = await userService.getMe()
           setUser(freshUser)
+          // On profite d'être en ligne (cet appel a réussi) pour précharger
+          // en tâche de fond tout ce qu'il faut pour le mode hors-ligne.
+          prechargerDonneesHorsLigne()
         } catch (err) {
           // Ne déconnecte que si le serveur a explicitement rejeté le token (401).
           // Une erreur réseau (tunnel expiré, timeout, CORS...) ne doit PAS
@@ -33,6 +37,8 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (matricule, password) => {
     const loggedInUser = await authService.login(matricule, password)
     setUser(loggedInUser)
+    // Idem : dès la connexion réussie, on précharge tout pour le hors-ligne.
+    prechargerDonneesHorsLigne()
     return loggedInUser
   }, [])
 

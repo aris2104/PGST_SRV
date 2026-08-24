@@ -1,18 +1,20 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Moon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../../components/layout/Header'
 import Avatar from '../../components/common/Avatar'
 import Button from '../../components/ui/Button'
+import Switch from '../../components/ui/Switch'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import { canContactAdmin } from '../../utils/roleConfig'
 
 function SettingsRow({ label, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between bg-white rounded-card shadow-card px-4 py-3.5 mb-2.5"
+      className="w-full flex items-center justify-between bg-white dark:bg-slate-800 rounded-card shadow-card px-4 py-3.5 mb-2.5"
     >
-      <span className="font-bold text-sm">{label}</span>
+      <span className="font-bold text-sm text-neutral-800 dark:text-neutral-100">{label}</span>
       <ChevronRight size={18} className="text-neutral-400" />
     </button>
   )
@@ -20,6 +22,7 @@ function SettingsRow({ label, onClick }) {
 
 export default function SettingsPage() {
   const { user, logout } = useAuth()
+  const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
   const anneeAdhesion = user?.membre_depuis
@@ -42,25 +45,34 @@ export default function SettingsPage() {
         >
           <Avatar initials={user?.initiales ?? '--'} />
           <div>
-            <p className="font-extrabold">{user?.nom_complet ?? '—'}</p>
+            <p className="font-extrabold text-neutral-800 dark:text-neutral-100">{user?.nom_complet ?? '—'}</p>
             <p className="text-sm text-neutral-500 font-medium">
               Membre depuis {anneeAdhesion}
             </p>
           </div>
         </button>
 
-        <h2 className="font-extrabold mb-3">COMPTE</h2>
+        <h2 className="font-extrabold mb-3 text-neutral-800 dark:text-neutral-100">COMPTE</h2>
         <SettingsRow label="Modifier mes infos" onClick={() => navigate('/parametres/profil')} />
         <SettingsRow label="Notifications" onClick={() => navigate('/parametres/notifications')} />
         <SettingsRow label="Confidentialité" onClick={() => navigate('/parametres/confidentialite')} />
 
-        <h2 className="font-extrabold mb-3 mt-8">SUPPORT</h2>
+        <h2 className="font-extrabold mb-3 mt-8 text-neutral-800 dark:text-neutral-100">AFFICHAGE</h2>
+        <div className="w-full flex items-center justify-between bg-white dark:bg-slate-800 rounded-card shadow-card px-4 py-3.5 mb-2.5">
+          <span className="flex items-center gap-2 font-bold text-sm text-neutral-800 dark:text-neutral-100">
+            <Moon size={18} className="text-neutral-400" />
+            Mode nuit
+          </span>
+          <Switch checked={isDark} onChange={toggleTheme} />
+        </div>
+
+        <h2 className="font-extrabold mb-3 mt-8 text-neutral-800 dark:text-neutral-100">SUPPORT</h2>
         <SettingsRow label="Aide" onClick={() => navigate('/parametres/aide')} />
         {canContactAdmin(user) && (
           <SettingsRow label="Contacter l'admin" onClick={() => navigate('/parametres/contact-admin')} />
         )}
 
-        <h2 className="font-extrabold mb-3 mt-8">À PROPOS</h2>
+        <h2 className="font-extrabold mb-3 mt-8 text-neutral-800 dark:text-neutral-100">À PROPOS</h2>
         <SettingsRow label="L'équipe" onClick={() => navigate('/parametres/equipe')} />
 
         <div className="mt-8">

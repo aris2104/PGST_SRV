@@ -1,5 +1,5 @@
 {
-  "name": "PGST - Plateforme de Gestion des Servants",
+  "name": "Plateforme de gestion des Servants",
   "short_name": "PGST",
   "description": "Gestion des servants : annonces, calendrier, cotisations, sanctions.",
   "start_url": "/",
@@ -10,8 +10,17 @@
   "theme_color": "#24365A",
   "lang": "fr",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

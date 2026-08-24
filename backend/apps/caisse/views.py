@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.db import models
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -145,3 +146,55 @@ class MouvementCaisseViewSet(viewsets.ModelViewSet):
         )
 
         return Response(MouvementCaisseSerializer(mouvement).data)
+
+    @action(detail=False, methods=['get'], url_path='solde')
+    def solde(self, request):
+        """
+        GET /api/caisse/mouvements/solde/
+
+        Source de vérité UNIQUE pour le solde de la caisse — pour ne plus
+        avoir 3 écrans (dashboard Trésorier, Mouvements, Caisse Admin) qui
+        recalculent chacun le même total à leur façon, avec le risque que
+        l'un d'eux oublie une source d'argent.
+
+        Le solde inclut TOUT ce qui entre réellement dans la caisse :
+          - les mouvements ENTREE (dons, subventions...)
+          - les cotisations hebdomadaires marquées PAYE
+          - les amendes marquées payées (Sanction.amende_payee) — leur
+            montant est dupliqué dans un MouvementCaisse ENTREE au moment
+            où le Trésorier les encaisse (voir sanctions/views.py), donc
+            elles sont déjà comptées via les mouvements ci-dessus : pas de
+            double-comptage ici.
+          - moins les sorties CONFIRME (une sortie en attente ou déclinée
+            ne doit pas réduire le solde affiché).
+        """
+        from apps.cotisations.models import Cotisation
+
+        total_entrees_mouvements = MouvementCaisse.objects.filter(
+            type_mouvement=MouvementCaisse.Type.ENTREE
+        ).aggregate(total=models.Sum('montant'))['total'] or 0
+
+        # Seules les sorties confirmées par le bureau sortent réellement de
+        # la caisse — 'statut_global' est une propriété calculée en Python
+        # (pas un champ stocké), donc on ne peut pas la filtrer en SQL.
+        sorties_qs = MouvementCaisse.objects.filter(
+            type_mouvement=MouvementCaisse.Type.SORTIE
+        ).prefetch_related('confirmations')
+        total_sorties = sum(
+            float(m.montant) for m in sorties_qs if m.statut_global == 'CONFIRME'
+        )
+
+        total_cotisations = Cotisation.objects.filter(
+            statut=Cotisation.Statut.PAYE
+        ).aggregate(total=models.Sum('montant'))['total'] or 0
+
+        total_entrees = float(total_entrees_mouvements) + float(total_cotisations)
+        solde = total_entrees - total_sorties
+
+        return Response({
+            'total_entrees': total_entrees,
+            'total_entrees_mouvements': float(total_entrees_mouvements),
+            'total_cotisations': float(total_cotisations),
+            'total_sorties': total_sorties,
+            'solde': solde,
+        })

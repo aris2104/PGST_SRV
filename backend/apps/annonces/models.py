@@ -15,8 +15,11 @@ class Annonce(models.Model):
     titre = models.CharField(max_length=150, blank=True)
     contenu = models.TextField()
     portee = models.CharField(max_length=10, choices=Portee.choices, default=Portee.GENERALE)
-    destinataire = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True,
+    # Un ou plusieurs destinataires quand portee = CIBLEE (avant : un seul
+    # membre au maximum, via ForeignKey — passage en ManyToMany pour
+    # permettre de cibler plusieurs membres à la fois).
+    destinataires = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True,
         related_name='annonces_recues',
         help_text="Renseigné uniquement si portee = CIBLEE",
     )

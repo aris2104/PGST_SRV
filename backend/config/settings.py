@@ -11,6 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='dev-secret-key-a-changer')
 DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+# À placer juste sous ALLOWED_HOSTS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Un DEBUG=True en production serait la pire config possible (stack traces,
 # secrets exposés...). On refuse de démarrer plutôt que de laisser passer
@@ -81,6 +83,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # --- Base de données -------------------------------------------------------
+# Fonctionne tel quel avec Postgres local (aucun changement de comportement)
+# ET avec Supabase (qui est aussi du Postgres) : il suffit de changer les
+# valeurs DB_* dans .env, aucune modification de code n'est nécessaire pour
+# basculer de l'un à l'autre. Voir backend/.env.supabase.example.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -90,6 +96,14 @@ DATABASES = {
         'HOST': config('DB_HOST', default='127.0.0.1'),
         'PORT': config('DB_PORT', default='5432'),
         'client_encoding': 'utf8',
+        'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=0, cast=int),
+        'OPTIONS': {
+            # 'prefer' : utilise le SSL s'il est proposé par le serveur
+            # (obligatoire chez Supabase), sinon fonctionne sans (Postgres
+            # local qui n'a pas de SSL configuré). Un seul réglage qui
+            # marche pour les deux cas, sans rien à changer en local.
+            'sslmode': config('DB_SSLMODE', default='prefer'),
+        },
     }
 }
 
@@ -156,4 +170,7 @@ CORS_ALLOW_CREDENTIALS = True
 # --- Web Push (VAPID) --------------------------------------------------------
 VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
 VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
-VAPID_ADMIN_EMAIL = config('VAPID_ADMIN_EMAIL', default='mailto:admin@pgst.com')
+VAPID_ADMIN_EMAIL = config(
+    'VAPID_ADMIN_EMAIL',
+    default='mailto:admin@pgst.com'
+)

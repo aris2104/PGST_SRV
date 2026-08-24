@@ -1,4 +1,5 @@
 import api from './api'
+import { envoyerOuMettreEnAttente } from './offlineQueue'
 
 export const userService = {
   async getMe() {
@@ -7,8 +8,12 @@ export const userService = {
   },
 
   async updateMe(payload) {
-    const { data } = await api.patch('/users/me/', payload)
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'patch',
+      url: '/users/me/',
+      data: payload,
+      label: 'Modification de mon profil',
+    })
   },
 
   async getNotificationPreferences() {
@@ -17,10 +22,18 @@ export const userService = {
   },
 
   async updateNotificationPreferences(payload) {
-    const { data } = await api.patch('/users/notifications-preferences/', payload)
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'patch',
+      url: '/users/notifications-preferences/',
+      data: payload,
+      label: 'Préférences de notifications',
+    })
   },
 
+  // changerMotDePasse reste volontairement EN DEHORS de la file d'attente
+  // hors-ligne : une action de sécurité comme celle-ci doit toujours
+  // réussir ou échouer immédiatement, jamais rester silencieusement "en
+  // attente" (risque de confusion si le mot de passe change entretemps).
   async changerMotDePasse(ancienMotDePasse, nouveauMotDePasse) {
     const { data } = await api.post('/users/changer-mot-de-passe/', {
       ancien_mot_de_passe: ancienMotDePasse,

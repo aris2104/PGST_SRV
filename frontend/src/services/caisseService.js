@@ -1,4 +1,5 @@
 import api from './api'
+import { envoyerOuMettreEnAttente } from './offlineQueue'
 
 export const caisseService = {
   async getMouvements() {
@@ -7,8 +8,12 @@ export const caisseService = {
   },
 
   async creerMouvement(payload) {
-    const { data } = await api.post('/caisse/mouvements/', payload)
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'post',
+      url: '/caisse/mouvements/',
+      data: payload,
+      label: `Mouvement de caisse — ${payload?.montant ?? ''}`,
+    })
   },
 
   async getMesConfirmations() {
@@ -17,7 +22,22 @@ export const caisseService = {
   },
 
   async statuer(mouvementId, decision) {
-    const { data } = await api.post(`/caisse/mouvements/${mouvementId}/statuer/`, { decision })
+    return envoyerOuMettreEnAttente({
+      method: 'post',
+      url: `/caisse/mouvements/${mouvementId}/statuer/`,
+      data: { decision },
+      label: `Confirmation de caisse #${mouvementId}`,
+    })
+  },
+
+  /**
+   * Source de vérité unique pour le solde de la caisse : entrées (mouvements
+   * + cotisations payées) moins sorties confirmées. À utiliser partout au
+   * lieu de recalculer localement — évite qu'un écran oublie une source
+   * d'argent (ex: les cotisations, qui étaient ignorées avant ce correctif).
+   */
+  async getSolde() {
+    const { data } = await api.get('/caisse/mouvements/solde/')
     return data
   },
 }

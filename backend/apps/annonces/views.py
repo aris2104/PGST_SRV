@@ -27,8 +27,10 @@ class AnnonceViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return (
             Annonce.objects
-            .select_related('publiee_par', 'destinataire')
-            .filter(Q(portee=Annonce.Portee.GENERALE) | Q(destinataire=user))
+            .select_related('publiee_par')
+            .prefetch_related('destinataires')
+            .filter(Q(portee=Annonce.Portee.GENERALE) | Q(destinataires=user))
+            .distinct()
         )
 
     def get_permissions(self):
@@ -45,7 +47,7 @@ class AnnonceViewSet(viewsets.ModelViewSet):
                 {'detail': "Réservé à l'administrateur."},
                 status=403,
             )
-        qs = Annonce.objects.select_related('publiee_par', 'destinataire')
+        qs = Annonce.objects.select_related('publiee_par').prefetch_related('destinataires')
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
@@ -56,14 +58,15 @@ class AnnonceViewSet(viewsets.ModelViewSet):
         body_text = annonce.contenu[:100] + '...' if len(annonce.contenu) > 100 else annonce.contenu
         title_text = getattr(annonce, 'titre', 'Nouvelle annonce')
 
-        # 1. Cas d'une annonce ciblée (un seul destinataire)
-        if annonce.destinataire:
-            envoyer_notification_push(
-                servant=annonce.destinataire,
-                title=title_text,
-                body=body_text,
-                url="/accueil",
-            )
+        # 1. Cas d'une annonce ciblée (un ou plusieurs destinataires)
+        if annonce.destinataires.exists():
+            for destinataire in annonce.destinataires.all():
+                envoyer_notification_push(
+                    servant=destinataire,
+                    title=title_text,
+                    body=body_text,
+                    url="/accueil",
+                )
         # 2. Cas d'une annonce générale (diffusion à tous les utilisateurs actifs sauf l'auteur)
         else:
             destinataires = User.objects.filter(is_active=True).exclude(id=self.request.user.id)

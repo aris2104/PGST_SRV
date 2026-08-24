@@ -6,7 +6,6 @@ import { calendarService } from '../../services/calendarService'
 import { presenceService } from '../../services/presenceService'
 import { useAuth } from '../../context/AuthContext'
 
-// Configuration des statuts
 const STATUTS = {
   PRESENT: { id: 'PRESENT', label: 'P', full: 'Présent', badge: 'bg-emerald-100 text-emerald-800' },
   RETARD: { id: 'RETARD', label: 'R', full: 'Retard', badge: 'bg-amber-100 text-amber-800' },
@@ -28,7 +27,6 @@ export default function PresencesPage() {
   const [servants, setServants] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Droits accès bureau (Président / Secrétaire / Admin)
   const isBureau = useMemo(() => {
     if (!user) return false
     if (user.is_superuser || user.is_staff) return true
@@ -50,12 +48,26 @@ export default function PresencesPage() {
     })
   }, [])
 
-  // Map indexée O(1) pour l'accès immédiat aux présences (servantId_odjId)
+  const odjsAvecAppel = useMemo(() => {
+    const set = new Set()
+    presences.forEach((item) => {
+      const pOdjId = typeof item.ordre_du_jour === 'object' ? item.ordre_du_jour?.id : (item.ordre_du_jour ?? item.ordre_du_jour_id)
+      if (pOdjId !== undefined && pOdjId !== null) set.add(String(pOdjId))
+    })
+    return set
+  }, [presences])
+
+  // Extraction robuste des identifiants (servant / servant_id / user)
   const presenceMap = useMemo(() => {
     const map = new Map()
     presences.forEach((item) => {
-      const pOdjId = typeof item.ordre_du_jour === 'object' ? item.ordre_du_jour?.id : item.ordre_du_jour
-      const pServantId = typeof item.servant === 'object' ? item.servant?.id : item.servant
+      const pOdjId = String(
+        (typeof item.ordre_du_jour === 'object' ? item.ordre_du_jour?.id : item.ordre_du_jour) ?? item.ordre_du_jour_id ?? ''
+      )
+      const pServantId = String(
+        (typeof item.servant === 'object' ? item.servant?.id : item.servant) ?? item.servant_id ?? item.user ?? item.user_id ?? ''
+      )
+
       if (pServantId && pOdjId) {
         map.set(`${pServantId}_${pOdjId}`, item)
       }
@@ -63,17 +75,23 @@ export default function PresencesPage() {
     return map
   }, [presences])
 
-  // Helper O(1) pour obtenir le statut d'un membre à une réunion
   const getStatusFor = useCallback((servantId, odjId) => {
-    const p = presenceMap.get(`${servantId}_${odjId}`)
-    if (!p) return null
-    if (p.statut && STATUTS[p.statut.toUpperCase()]) return STATUTS[p.statut.toUpperCase()]
-    if (p.present === true) return STATUTS.PRESENT
-    if (p.present === false) return STATUTS.ABSENT
-    return null
-  }, [presenceMap])
+    const key = `${String(servantId)}_${String(odjId)}`
+    const p = presenceMap.get(key)
 
-  // Map de calcul pré-agrégé des stats par membre
+    if (p) {
+      if (p.statut && STATUTS[p.statut.toUpperCase()]) return STATUTS[p.statut.toUpperCase()]
+      if (p.present === true) return STATUTS.PRESENT
+      if (p.present === false) return STATUTS.ABSENT
+    }
+
+    if (odjsAvecAppel.has(String(odjId))) {
+      return STATUTS.ABSENT
+    }
+
+    return null
+  }, [presenceMap, odjsAvecAppel])
+
   const statsMap = useMemo(() => {
     const map = new Map()
     const total = ordresDuJour.length
@@ -88,22 +106,20 @@ export default function PresencesPage() {
         else if (st?.id === 'ABSENT') a++
       })
       const percent = total > 0 ? Math.round(((p + r) / total) * 100) : 0
-      map.set(Number(s.id), { percent, p, r, perm, a, total })
+      map.set(String(s.id), { percent, p, r, perm, a, total })
     })
 
     return map
   }, [servants, ordresDuJour, getStatusFor])
 
-  // Stats perso pour les cartes synthétiques
   const myStats = useMemo(() => {
     if (!user) return { percent: 0, total: 0, p: 0, r: 0, perm: 0, a: 0 }
-    return statsMap.get(Number(user.id)) || { percent: 0, total: ordresDuJour.length, p: 0, r: 0, perm: 0, a: 0 }
+    return statsMap.get(String(user.id)) || { percent: 0, total: ordresDuJour.length, p: 0, r: 0, perm: 0, a: 0 }
   }, [user, statsMap, ordresDuJour.length])
 
-  // Filtrage des membres selon le rôle (Bureau ou Membre unique)
   const displayedServants = useMemo(() => {
     if (isBureau) return servants
-    return servants.filter((s) => Number(s.id) === Number(user?.id))
+    return servants.filter((s) => String(s.id) === String(user?.id))
   }, [servants, isBureau, user])
 
   return (
@@ -112,13 +128,10 @@ export default function PresencesPage() {
 
       <div className="flex items-center justify-between px-5 pt-5 pb-2">
         <h2 className="font-extrabold text-lg">Registre des présences</h2>
-        {!loading && isBureau && (
-          <BoutonPDF zone="presences" titre="Présences aux réunions" />
-        )}
+        {!loading && isBureau && <BoutonPDF zone="presences" titre="Présences aux réunions" />}
       </div>
 
       <div id="pdf-zone-presences" className="px-4 py-3 space-y-4 max-w-4xl mx-auto">
-        {/* SYNTHÈSE PERSO / GLOBALE */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="p-3 bg-white border border-neutral-200">
             <p className="text-[10px] font-extrabold text-neutral-400 uppercase">Assiduité Globale</p>
@@ -142,7 +155,6 @@ export default function PresencesPage() {
           </Card>
         </div>
 
-        {/* REGISTRE - TABLEAU MATRICIEL */}
         <Card className="p-0 overflow-hidden border border-neutral-200 shadow-sm bg-white">
           <div className="p-4 bg-neutral-50 border-b border-neutral-200 flex items-center justify-between">
             <h3 className="font-extrabold text-sm text-neutral-800">
@@ -185,11 +197,11 @@ export default function PresencesPage() {
                   </thead>
                   <tbody className="divide-y divide-neutral-100 text-xs">
                     {displayedServants.map((s) => {
-                      const stats = statsMap.get(Number(s.id)) || { percent: 0, p: 0, r: 0, total: ordresDuJour.length }
+                      const stats = statsMap.get(String(s.id)) || { percent: 0, p: 0, r: 0, total: ordresDuJour.length }
                       return (
                         <tr key={s.id} className="hover:bg-neutral-50/80 transition">
                           <td className="sticky left-0 bg-white p-3 font-bold text-neutral-800 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] whitespace-nowrap">
-                            {s.nom_complet || s.username}
+                            {s.nom_complet || s.username || `${s.first_name ?? ''} ${s.last_name ?? ''}`}
                           </td>
 
                           {ordresDuJour.map((odj) => {
@@ -222,7 +234,6 @@ export default function PresencesPage() {
                 </table>
               </div>
 
-              {/* LÉGENDE */}
               <div className="p-3 bg-neutral-50 border-t border-neutral-200 flex flex-wrap items-center justify-center gap-4 text-[11px] font-bold text-neutral-600">
                 <span className="flex items-center gap-1.5">
                   <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-[9px]">P</span> Présent

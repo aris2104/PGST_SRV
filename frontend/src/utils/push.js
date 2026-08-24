@@ -21,6 +21,15 @@ export async function subscribeUserToPush() {
     // 1. Attendre que le Service Worker soit prêt
     const registration = await navigator.serviceWorker.ready;
 
+    // 1bis. Si un abonnement existe déjà (créé avec une ancienne clé VAPID,
+    // par exemple après une rotation des clés côté serveur), le navigateur
+    // refuse silencieusement tout nouvel abonnement avec une clé
+    // différente. On se désabonne donc d'abord systématiquement.
+    const abonnementExistant = await registration.pushManager.getSubscription();
+    if (abonnementExistant) {
+      await abonnementExistant.unsubscribe();
+    }
+
     // 2. Demander la permission d'afficher des notifications
     const permissionResult = await window.Notification.requestPermission();
     if (permissionResult !== 'granted') {

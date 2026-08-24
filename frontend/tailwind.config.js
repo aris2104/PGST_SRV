@@ -1,5 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  // On évite volontairement la classe générique '.dark' : certaines
+  // extensions Chrome (simulateurs de téléphone, etc.) ajoutent elles-mêmes
+  // une classe "dark" sur <html> pour leur propre thème, ce qui entre en
+  // collision avec Tailwind et active notre mode nuit par erreur. On utilise
+  // à la place un attribut propre à l'app : [data-theme="dark"].
+  darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     './index.html',
     './src/**/*.{js,jsx}',

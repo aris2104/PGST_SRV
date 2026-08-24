@@ -55,6 +55,10 @@ const ConfirmationsSortiesPage = lazy(() => import('../pages/caisse/Confirmation
 // Organisation
 const EnregistrerOrdreDuJourPage = lazy(() => import('../pages/organisateur/EnregistrerOrdreDuJourPage'))
 
+// Ceremoniaire
+//const CeremoniaireCeremoniesPage = lazy(() => import('../pages/ceremoniaire/CeremoniaireCeremoniesPage'))
+//const EnregistrerSanctionPage = lazy(() => import('../pages/ceremoniaire/EnregistrerSanctionPage'))
+
 // Dashboards & Admin
 const PresiSecreDashboard = lazy(() => import('../pages/roles-dashboards/PresiSecreDashboard'))
 const TresorDashboard = lazy(() => import('../pages/roles-dashboards/TresorDashboard'))
@@ -68,7 +72,7 @@ const AdminActivitePage = lazy(() => import('../pages/admin/AdminActivitePage'))
 const RapportPage = lazy(() => import('../pages/admin/RapportPage'))
 const AddMemberPage = lazy(() => import('../pages/members/AddMemberPage'))
 const MembersPage = lazy(() => import('../pages/members/MembersPage'))
-
+const CeremoniaireDashboard = lazy(() => import('../pages/roles-dashboards/CeremoniaireDashboard'))
 // Fallback spinner identique au splash screen
 function PageLoader() {
   return (
@@ -130,6 +134,7 @@ export default function AppRoutes() {
                 ROLES.CEREMONIAIRE,
                 ROLES.CONSEILLER,
                 ROLES.ADMIN,
+                ROLES.SUPER_ADMIN,
               ]}
             >
               <MembersPage />
@@ -139,7 +144,7 @@ export default function AppRoutes() {
         <Route
           path="/membres/ajouter"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN, ROLES.SUPER_ADMIN]}>
               <AddMemberPage />
             </ProtectedRoute>
           }
@@ -149,7 +154,7 @@ export default function AppRoutes() {
         <Route
           path="/presi-secre/programme"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.CEREMONIAIRE, ROLES.CONSEILLER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.CEREMONIAIRE, ROLES.CONSEILLER, ROLES.ADMIN, ROLES.SUPER_ADMIN]}>
               <PlanifierProgrammePage />
             </ProtectedRoute>
           }
@@ -157,7 +162,7 @@ export default function AppRoutes() {
         <Route
           path="/presi-secre/publier-annonce"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN, ROLES.SUPER_ADMIN]}>
               <PublierAnnoncePage />
             </ProtectedRoute>
           }
@@ -165,7 +170,7 @@ export default function AppRoutes() {
         <Route
           path="/presi-secre/appel"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN, ROLES.SUPER_ADMIN]}>
               <EnregistrerPresencePage />
             </ProtectedRoute>
           }
@@ -176,7 +181,7 @@ export default function AppRoutes() {
         <Route
           path="/organisateur/ordre-du-jour"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ORGANISATEUR, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.ORGANISATEUR, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <EnregistrerOrdreDuJourPage />
             </ProtectedRoute>
           }
@@ -186,7 +191,7 @@ export default function AppRoutes() {
         <Route
           path="/disciplinaire/sanctions"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.CEREMONIAIRE, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.CONSEILLER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.CEREMONIAIRE, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.CONSEILLER, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <DisciplinaireSanctionsPage />
             </ProtectedRoute>
           }
@@ -194,7 +199,7 @@ export default function AppRoutes() {
         <Route
           path="/disciplinaire/enregistrer"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.CEREMONIAIRE, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.CONSEILLER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.CEREMONIAIRE, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.CONSEILLER, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <EnregistrerSanctionPage />
             </ProtectedRoute>
           }
@@ -204,7 +209,7 @@ export default function AppRoutes() {
         <Route
           path="/tresor/caisse"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <TresorCaissePage />
             </ProtectedRoute>
           }
@@ -212,7 +217,7 @@ export default function AppRoutes() {
         <Route
           path="/tresor/impayes"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <TresorImpayesPage />
             </ProtectedRoute>
           }
@@ -220,7 +225,7 @@ export default function AppRoutes() {
         <Route
           path="/tresor/enregistrer-paiement"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <EnregistrerPaiementPage />
             </ProtectedRoute>
           }
@@ -228,7 +233,7 @@ export default function AppRoutes() {
         <Route
           path="/tresor/mouvements"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <MouvementsPage />
             </ProtectedRoute>
           }
@@ -236,7 +241,7 @@ export default function AppRoutes() {
         <Route
           path="/tresor/mouvements/nouveau"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <NouveauMouvementPage />
             </ProtectedRoute>
           }
@@ -244,7 +249,7 @@ export default function AppRoutes() {
         <Route
           path="/caisse/confirmations"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.DISCIPLINAIRE, ROLES.ORGANISATEUR, ROLES.CEREMONIAIRE, ROLES.CONSEILLER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.DISCIPLINAIRE, ROLES.ORGANISATEUR, ROLES.CEREMONIAIRE, ROLES.CONSEILLER, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <ConfirmationsSortiesPage />
             </ProtectedRoute>
           }
@@ -254,7 +259,7 @@ export default function AppRoutes() {
         <Route
           path="/administration/presi-secre"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <PresiSecreDashboard />
             </ProtectedRoute>
           }
@@ -262,7 +267,7 @@ export default function AppRoutes() {
         <Route
           path="/administration/tresor"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.TRESORIER, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <TresorDashboard />
             </ProtectedRoute>
           }
@@ -270,7 +275,7 @@ export default function AppRoutes() {
         <Route
           path="/administration/disciplinaire"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.DISCIPLINAIRE, ROLES.ADMIN , ROLES.CEREMONIAIRE, ROLES.SUPER_ADMIN]}>
               <DisciplinaireDashboard />
             </ProtectedRoute>
           }
@@ -278,7 +283,7 @@ export default function AppRoutes() {
         <Route
           path="/administration/organisateur"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ORGANISATEUR, ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.ORGANISATEUR, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <OrganisateurDashboard />
             </ProtectedRoute>
           }
@@ -286,8 +291,16 @@ export default function AppRoutes() {
         <Route
           path="/administration/admin"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/administration/ceremoniaire"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.CEREMONIAIRE, ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
+              <CeremoniaireDashboard />
             </ProtectedRoute>
           }
         />
@@ -296,7 +309,7 @@ export default function AppRoutes() {
         <Route
           path="/admin/groupe"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <MembersPage />
             </ProtectedRoute>
           }
@@ -304,7 +317,7 @@ export default function AppRoutes() {
         <Route
           path="/admin/caisse"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CONSEILLER]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <AdminCaissePage />
             </ProtectedRoute>
           }
@@ -312,7 +325,7 @@ export default function AppRoutes() {
         <Route
           path="/admin/sanctions"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <AdminSanctionsPage />
             </ProtectedRoute>
           }
@@ -320,7 +333,7 @@ export default function AppRoutes() {
         <Route
           path="/admin/programme-annonces"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.TRESORIER, ROLES.DISCIPLINAIRE, ROLES.ORGANISATEUR]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN , ROLES.SUPER_ADMIN, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.TRESORIER, ROLES.DISCIPLINAIRE, ROLES.ORGANISATEUR]}>
               <AdminProgrammeAnnoncesPage />
             </ProtectedRoute>
           }
@@ -328,7 +341,7 @@ export default function AppRoutes() {
         <Route
           path="/admin/activite"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN , ROLES.SUPER_ADMIN]}>
               <AdminActivitePage />
             </ProtectedRoute>
           }
@@ -336,7 +349,7 @@ export default function AppRoutes() {
         <Route
           path="/rapport"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.TRESORIER, ROLES.CONSEILLER]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN , ROLES.SUPER_ADMIN, ROLES.PRESIDENT, ROLES.SECRETAIRE, ROLES.TRESORIER, ROLES.CONSEILLER , ROLES.DISCIPLINAIRE, ROLES.ORGANISATEUR, ROLES.CEREMONIAIRE]}>
               <RapportPage />
             </ProtectedRoute>
           }

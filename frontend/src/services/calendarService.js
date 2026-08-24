@@ -1,4 +1,5 @@
 import api from './api'
+import { envoyerOuMettreEnAttente } from './offlineQueue'
 
 export const calendarService = {
   // Récupérer mes messes (avec filtre de date optionnel)
@@ -34,23 +35,39 @@ export const calendarService = {
   },
 
   async creerAnnonce(payload) {
-    const { data } = await api.post('/annonces/', payload)
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'post',
+      url: '/annonces/',
+      data: payload,
+      label: `Annonce — ${payload?.titre || ''}`,
+    })
   },
 
   async creerMesse(payload) {
-    const { data } = await api.post('/calendrier/messes/', payload)
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'post',
+      url: '/calendrier/messes/',
+      data: payload,
+      label: 'Nouvelle messe',
+    })
   },
 
   async creerOrdreDuJour(payload) {
-    const { data } = await api.post('/calendrier/ordre-du-jour/', payload)
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'post',
+      url: '/calendrier/ordre-du-jour/',
+      data: payload,
+      label: `Ordre du jour — ${payload?.titre || payload?.date || ''}`,
+    })
   },
   /** Réservé à l'Organisateur/Admin : modifier un ordre du jour existant (réversible) */
   async modifierOrdreDuJour(id, payload) {
-    const { data } = await api.patch(`/calendrier/ordre-du-jour/${id}/`, payload)
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'patch',
+      url: `/calendrier/ordre-du-jour/${id}/`,
+      data: payload,
+      label: `Modification ordre du jour #${id}`,
+    })
   },
   async getResumePresences() {
     const { data } = await api.get('/calendrier/presences/resume/')

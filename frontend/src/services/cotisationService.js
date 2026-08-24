@@ -1,4 +1,5 @@
 import api from './api'
+import { envoyerOuMettreEnAttente } from './offlineQueue'
 
 // Génère la liste chronologique de (année, mois) entre deux bornes
 // incluses, en gérant le passage d'une année à l'autre.
@@ -49,15 +50,29 @@ export const cotisationService = {
       .flatMap((r) => r.value)
   },
 
+  /** Toutes les cotisations payées (toutes années/mois) — pour le détail du solde de caisse */
+  async getToutesPayees() {
+    const { data } = await api.get('/cotisations/', { params: { statut: 'PAYE' } })
+    return data.results ?? data
+  },
+
   /** Réservé au rôle Trésorier */
   async marquerPaye(cotisationId) {
-    const { data } = await api.patch(`/cotisations/${cotisationId}/`, { statut: 'PAYE' })
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'patch',
+      url: `/cotisations/${cotisationId}/`,
+      data: { statut: 'PAYE' },
+      label: `Cotisation payée #${cotisationId}`,
+    })
   },
 
   /** Réservé au rôle Trésorier : enregistrer un nouveau paiement (semaine pas encore créée) */
   async enregistrerPaiement(payload) {
-    const { data } = await api.post('/cotisations/', payload)
-    return data
+    return envoyerOuMettreEnAttente({
+      method: 'post',
+      url: '/cotisations/',
+      data: payload,
+      label: 'Nouveau paiement de cotisation',
+    })
   },
 }

@@ -35,6 +35,23 @@ class MouvementCaisse(models.Model):
     def __str__(self):
         return f"{self.get_type_mouvement_display()} — {self.montant} — {self.motif}"
 
+    @property
+    def statut_global(self):
+        """Pour une SORTIE : EN_ATTENTE / CONFIRME (unanimité) / DECLINE (au
+        moins un refus). Une ENTREE n'a pas de workflow de validation, donc
+        pas de statut. Logique centralisée ici (plutôt que dans le
+        serializer) pour être réutilisable côté calculs (ex: solde)."""
+        if self.type_mouvement == self.Type.ENTREE:
+            return None
+        decisions = [c.decision for c in self.confirmations.all()]
+        if not decisions:
+            return 'CONFIRME'  # aucun autre membre du bureau à consulter
+        if 'DECLINE' in decisions:
+            return 'DECLINE'
+        if all(d == 'CONFIRME' for d in decisions):
+            return 'CONFIRME'
+        return 'EN_ATTENTE'
+
 
 class ConfirmationMouvement(models.Model):
     """

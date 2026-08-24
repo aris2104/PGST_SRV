@@ -11,6 +11,7 @@ from utils.permissions import (
     IsPresiOrCeremoniaire,
     IsPresiOrSecretary,
     dans_la_fenetre_de_modification,
+    message_hors_fenetre,
     is_admin_user,
     _has_role,
 )
@@ -37,9 +38,11 @@ class MesseViewSet(viewsets.ModelViewSet):
     Cérémoniaire (ou le Président) qui choisit quel servant officie à
     quelle messe.
 
-    Fenêtre de modification : comme pour l'appel, une messe reste
-    modifiable pendant 7 jours après sa date, puis se verrouille pour tout
-    le monde sauf l'Admin (voir dans_la_fenetre_de_modification).
+    Fenêtre de modification : contrairement à l'appel/présence, une messe
+    se planifie À L'AVANCE (toute la semaine peut être saisie avant que la
+    date n'arrive). Seule règle : plus possible d'y toucher au-delà de 7
+    jours après la date de la messe (verrouillé pour tout le monde sauf
+    l'Admin, voir dans_la_fenetre_de_modification).
     """
 
     queryset = Messe.objects.prefetch_related('servants').all()
@@ -53,8 +56,11 @@ class MesseViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def _verifier_fenetre(self, messe_date):
-        if not dans_la_fenetre_de_modification(messe_date, self.request.user):
-            raise PermissionDenied(MESSAGE_HORS_FENETRE)
+        # Une messe se planifie À L'AVANCE (toute la semaine peut être
+        # programmée avant qu'elle n'arrive) : autoriser_futur=True.
+        # Seule la limite de 7 jours dans le passé reste bloquante.
+        if not dans_la_fenetre_de_modification(messe_date, self.request.user, autoriser_futur=True):
+            raise PermissionDenied(message_hors_fenetre(messe_date, autoriser_futur=True))
 
     def perform_create(self, serializer):
         self._verifier_fenetre(serializer.validated_data.get('date'))
@@ -130,6 +136,13 @@ class PresenceViewSet(viewsets.ModelViewSet):
     serializer_class = PresenceSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['servant', 'ordre_du_jour', 'present', 'statut']
+    # BUG CORRIGÉ : la pagination par défaut (20/page) tronquait le registre
+    # côté front (PresencesPage.jsx récupère TOUTE la liste pour construire
+    # la matrice membre x réunion). Au-delà de 20 enregistrements, les
+    # présences manquantes étaient affichées à tort comme "Absent" par
+    # défaut. Cet endpoint n'est consommé que par ce composant, qui a
+    # besoin de l'intégralité des présences en un seul appel.
+    pagination_class = None
 
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy', 'enregistrer_appel'):
@@ -154,7 +167,7 @@ class PresenceViewSet(viewsets.ModelViewSet):
 
     def _verifier_fenetre(self, odj_date):
         if not dans_la_fenetre_de_modification(odj_date, self.request.user):
-            raise PermissionDenied(MESSAGE_HORS_FENETRE)
+            raise PermissionDenied(message_hors_fenetre(odj_date))
 
     def perform_create(self, serializer):
         odj = serializer.validated_data.get('ordre_du_jour')
@@ -259,7 +272,7 @@ class PresenceViewSet(viewsets.ModelViewSet):
         # sauf pour l'Admin, qui garde toujours la main pour corriger.
         if not dans_la_fenetre_de_modification(odj.date, request.user):
             return Response(
-                {'error': MESSAGE_HORS_FENETRE},
+                {'error': message_hors_fenetre(odj.date)},
                 status=status.HTTP_403_FORBIDDEN,
             )
 

@@ -311,11 +311,8 @@ function RoleBusinessSection({ roleCode, navigate }) {
     return (
       <div className="mb-6">
         <h2 className="text-lg font-extrabold mb-3">Suivi du programme</h2>
-        <ShortcutCard
-          label="Choisir les servants"
-          description="Programme de messe de la semaine"
-          onClick={() => navigate('/presi-secre/programme')}
-        />
+        {/* "Choisir les servants" et "Sanctions" sont déjà sur l'accueil
+            (CeremoniaireDashboard) — pas la peine de les répéter ici. */}
         <ShortcutCard
           label="Programme"
           description="Programme des prochaines réunions"
@@ -325,11 +322,6 @@ function RoleBusinessSection({ roleCode, navigate }) {
           label="Membres"
           description="Consultation seule"
           onClick={() => navigate('/membres')}
-        />
-        <ShortcutCard
-          label="Sanctions"
-          description="Le Cérémoniaire gère aussi la discipline"
-          onClick={() => navigate('/disciplinaire/sanctions')}
         />
         <ShortcutCard
           label="Confirmations de caisse"
@@ -372,6 +364,10 @@ function RoleBusinessSection({ roleCode, navigate }) {
 
   // CONSEILLER : quasi la même vue globale que l'Admin, SAUF l'activité
   // récente (journal brut) et la gestion des comptes — ça reste à l'Admin.
+  // CONSEILLER : son accueil (ConseillerDashboard) a les mêmes raccourcis en
+  // boutons d'action ; ici, sur Suivis, c'est la vue "groupe" consolidée
+  // (même logique que pour Admin juste au-dessus) — pas un vrai doublon
+  // fonctionnel, plutôt deux façons d'atteindre la même page.
   if (roleCode === ROLES.CONSEILLER) {
     return (
       <div className="mb-6">
@@ -381,10 +377,9 @@ function RoleBusinessSection({ roleCode, navigate }) {
           description="Consultation"
           onClick={() => navigate('/membres')}
         />
-        <ShortcutCard
-          label="Caisse"
-          onClick={() => navigate('/admin/caisse')}
-        />
+        {/* "Caisse" retiré : /admin/caisse est réservé à Admin/Super Admin,
+            donc bloqué pour le Conseiller (page vide/inaccessible). Il garde
+            "Confirmations de caisse", qui lui est bien ouvert. */}
         <ShortcutCard
           label="Sanctions"
           onClick={() => navigate('/disciplinaire/sanctions')}

@@ -30,3 +30,6 @@ dev-dist/
 .idea/
 .DS_Store
 Thumbs.db
+.env.example
+.env.supabase.example
+.env.local.backup

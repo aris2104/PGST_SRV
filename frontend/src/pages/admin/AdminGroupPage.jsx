@@ -25,11 +25,23 @@ export default function AdminGroupPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const [info, setInfo] = useState('')
+
   const handleRoleChange = async (userId, roleId) => {
     setSavingId(userId)
+    setInfo('')
     try {
-      const updated = await adminService.changerRole(userId, roleId || null)
-      setMembres((prev) => prev.map((m) => (m.id === userId ? { ...m, role: updated.role } : m)))
+      const resultat = await adminService.changerRole(userId, roleId || null)
+      if (resultat.queued) {
+        // Hors-ligne : on met à jour l'affichage tout de suite avec le rôle
+        // choisi localement (optimiste), en attendant la confirmation
+        // serveur qui arrivera au retour du réseau.
+        const roleChoisi = roles.find((r) => String(r.id) === String(roleId)) || null
+        setMembres((prev) => prev.map((m) => (m.id === userId ? { ...m, role: roleChoisi } : m)))
+        setInfo("Pas de connexion : le changement de rôle sera appliqué dès le retour du réseau.")
+      } else {
+        setMembres((prev) => prev.map((m) => (m.id === userId ? { ...m, role: resultat.data.role } : m)))
+      }
     } catch {
       setError("Le changement de rôle a échoué.")
     } finally {
@@ -39,9 +51,13 @@ export default function AdminGroupPage() {
 
   const handleToggleActif = async (userId, current) => {
     setSavingId(userId)
+    setInfo('')
     try {
-      await adminService.toggleActif(userId, !current)
+      const resultat = await adminService.toggleActif(userId, !current)
       setMembres((prev) => prev.map((m) => (m.id === userId ? { ...m, is_active: !current } : m)))
+      if (resultat.queued) {
+        setInfo("Pas de connexion : la mise à jour sera appliquée dès le retour du réseau.")
+      }
     } catch {
       setError("La mise à jour a échoué.")
     } finally {
@@ -64,6 +80,7 @@ export default function AdminGroupPage() {
 
         {loading && <p className="text-neutral-400 text-sm">Chargement...</p>}
         {error && <p className="text-danger text-sm font-medium mb-3">{error}</p>}
+        {info && <p className="text-info text-sm font-medium mb-3">{info}</p>}
 
         {!loading && membres.length === 0 && (
           <EmptyState title="Aucun membre enregistré" />

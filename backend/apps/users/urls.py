@@ -13,5 +13,6 @@ urlpatterns = [
     path('me/', MeView.as_view(), name='user-me'),
     path('notifications-preferences/', NotificationPreferenceView.as_view(), name='notification-preferences'),
     path('changer-mot-de-passe/', ChangePasswordView.as_view(), name='change-password'),
-    path('push-subscription/', PushSubscriptionView.as_view(), name='push-subscription'),
+    path('push-subscriptions/', PushSubscriptionView.as_view(), name='push-subscription'),
+    path('push-subscription/', PushSubscriptionView.as_view(), name='push-subscription-old'),
 ] + router.urls

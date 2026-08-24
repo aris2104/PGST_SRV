@@ -13,9 +13,10 @@ export default function PublierAnnoncePage() {
     titre: '',
     contenu: '',
     portee: 'GENERALE',
-    destinataire: '',
+    destinataires: [], // plusieurs membres possibles désormais
   })
   const [membres, setMembres] = useState([])
+  const [filtreRole, setFiltreRole] = useState('TOUS')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -24,13 +25,51 @@ export default function PublierAnnoncePage() {
     adminService.getMembres().then(setMembres).catch(() => setMembres([]))
   }, [])
 
+  // Rôles disponibles pour le filtre, déduits des membres chargés
+  const roles = [
+    ...new Map(
+      membres
+        .filter((m) => m.role)
+        .map((m) => [m.role.id ?? m.role.code, m.role])
+    ).values(),
+  ]
+
+  const membresFiltres = membres.filter((m) => {
+    if (filtreRole === 'TOUS') return true
+    return String(m.role?.id ?? m.role?.code) === filtreRole
+  })
+
   const handleChange = (field) => (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
     setForm((f) => ({ ...f, [field]: value }))
   }
 
+  const toggleDestinataire = (id) => {
+    setForm((f) => {
+      const deja = f.destinataires.includes(id)
+      return {
+        ...f,
+        destinataires: deja
+          ? f.destinataires.filter((d) => d !== id)
+          : [...f.destinataires, id],
+      }
+    })
+  }
+
+  const toutSelectionner = () => {
+    setForm((f) => ({ ...f, destinataires: membresFiltres.map((m) => m.id) }))
+  }
+
+  const toutDeselectionner = () => {
+    setForm((f) => ({ ...f, destinataires: [] }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (form.portee === 'CIBLEE' && form.destinataires.length === 0) {
+      setError('Sélectionne au moins un membre pour une annonce ciblée.')
+      return
+    }
     setSaving(true)
     setError('')
     setSuccess(false)
@@ -40,12 +79,12 @@ export default function PublierAnnoncePage() {
         contenu: form.contenu,
         portee: form.portee,
       }
-      if (form.portee === 'CIBLEE' && form.destinataire) {
-        payload.destinataire = form.destinataire
+      if (form.portee === 'CIBLEE') {
+        payload.destinataires = form.destinataires
       }
       await calendarService.creerAnnonce(payload)
       setSuccess(true)
-      setForm({ titre: '', contenu: '', portee: 'GENERALE', destinataire: '' })
+      setForm({ titre: '', contenu: '', portee: 'GENERALE', destinataires: [] })
     } catch {
       setError("La publication de l'annonce a échoué. Vérifie les champs.")
     } finally {
@@ -88,20 +127,66 @@ export default function PublierAnnoncePage() {
         </label>
 
         {form.portee === 'CIBLEE' && (
-          <label className="block mb-4">
-            <span className="block mb-1.5 font-semibold text-sm text-neutral-700">Destinataire</span>
-            <select
-              value={form.destinataire}
-              onChange={handleChange('destinataire')}
-              required
-              className="w-full px-4 py-3 rounded-md bg-white border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-navy"
-            >
-              <option value="">Choisir un membre</option>
-              {membres.map((m) => (
-                <option key={m.id} value={m.id}>{m.nom_complet}</option>
+          <div className="block mb-4">
+            <span className="block mb-1.5 font-semibold text-sm text-neutral-700">
+              Destinataires ({form.destinataires.length} sélectionné{form.destinataires.length > 1 ? 's' : ''})
+            </span>
+
+            {roles.length > 0 && (
+              <select
+                value={filtreRole}
+                onChange={(e) => setFiltreRole(e.target.value)}
+                className="w-full mb-2 px-4 py-2.5 rounded-md bg-white border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-navy text-sm"
+              >
+                <option value="TOUS">Filtrer par rôle : tous</option>
+                {roles.map((r) => (
+                  <option key={r.id ?? r.code} value={String(r.id ?? r.code)}>
+                    {r.libelle || r.nom || r.code}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <div className="flex gap-3 mb-2">
+              <button
+                type="button"
+                onClick={toutSelectionner}
+                className="text-xs font-semibold text-navy underline"
+              >
+                Tout sélectionner
+              </button>
+              <button
+                type="button"
+                onClick={toutDeselectionner}
+                className="text-xs font-semibold text-neutral-500 underline"
+              >
+                Tout désélectionner
+              </button>
+            </div>
+
+            <div className="max-h-64 overflow-y-auto rounded-md border border-neutral-300 bg-white divide-y divide-neutral-100">
+              {membresFiltres.length === 0 && (
+                <p className="px-4 py-3 text-sm text-neutral-500">Aucun membre pour ce filtre.</p>
+              )}
+              {membresFiltres.map((m) => (
+                <label
+                  key={m.id}
+                  className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-neutral-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.destinataires.includes(m.id)}
+                    onChange={() => toggleDestinataire(m.id)}
+                    className="h-4 w-4 accent-navy"
+                  />
+                  <span className="text-sm text-neutral-700">
+                    {m.nom_complet}
+                    {m.role?.libelle || m.role?.nom ? ` — ${m.role.libelle || m.role.nom}` : ''}
+                  </span>
+                </label>
               ))}
-            </select>
-          </label>
+            </div>
+          </div>
         )}
 
         <label className="block mb-4">

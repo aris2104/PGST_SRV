@@ -18,6 +18,9 @@ class Messe(models.Model):
     date = models.DateField()
     heure = models.TimeField()
     type_messe = models.CharField(max_length=20, choices=TypeMesse.choices)
+    # Utilisé quand type_messe = AUTRE : nom exact de la messe qui n'est pas
+    # dans la liste fermée ci-dessus (ex: "Messe des malades", "Neuvaine...").
+    nom_personnalise = models.CharField(max_length=150, blank=True)
     servants = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name='messes', blank=True,
     )
@@ -29,7 +32,8 @@ class Messe(models.Model):
         ordering = ['date', 'heure']
 
     def __str__(self):
-        return f"{self.get_type_messe_display()} - {self.date} {self.heure}"
+        libelle = self.nom_personnalise if self.type_messe == self.TypeMesse.AUTRE and self.nom_personnalise else self.get_type_messe_display()
+        return f"{libelle} - {self.date} {self.heure}"
 
 
 class OrdreDuJour(models.Model):

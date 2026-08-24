@@ -29,7 +29,7 @@ export default function BottomNavigation() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 min-h-16 bg-white border-t border-neutral-200 flex items-center justify-around max-w-md mx-auto z-50"
+      className="fixed bottom-0 inset-x-0 min-h-16 bg-white dark:bg-slate-800 border-t border-neutral-200 dark:border-slate-700 flex items-center justify-around max-w-md mx-auto z-50"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {ITEMS.map(({ to, icon: Icon, label }) => (
@@ -40,7 +40,7 @@ export default function BottomNavigation() {
           onTouchStart={() => PREFETCH[to]?.()}
           className={({ isActive }) =>
             `flex flex-col items-center gap-0.5 px-4 py-2 ${
-              isActive ? 'text-navy' : 'text-neutral-400'
+              isActive ? 'text-navy dark:text-white' : 'text-neutral-400'
             }`
           }
         >
