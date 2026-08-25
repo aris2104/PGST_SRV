@@ -33,3 +33,4 @@ Thumbs.db
 .env.example
 .env.supabase.example
 .env.local.backup
+.env.development

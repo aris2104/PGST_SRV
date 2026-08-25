@@ -23,8 +23,19 @@ api.interceptors.request.use((config) => {
 })
 
 // ============================================================
-// 2. Gestion du refresh token + Cache Offline
+// 2. Gestion du refresh token
 // ============================================================
+// Note : le cache hors-ligne des données (GET) est géré exclusivement par
+// le Service Worker (voir src/sw.js, stratégie NetworkFirst + Cache
+// Storage). On a RETIRÉ ici un cache parallèle qui stockait chaque
+// réponse dans localStorage : ce stockage est petit (5-10 Mo selon les
+// navigateurs) et partagé avec les jetons de connexion. En le remplissant
+// avec des données volumineuses (listes de membres, cotisations...), on
+// augmentait le risque que le navigateur "fasse le ménage" dans ce
+// stockage sous pression (notamment après un swipe de l'app) — ce qui
+// emportait aussi les jetons de connexion avec lui, forçant une
+// reconnexion. Le Service Worker utilise un espace de stockage séparé et
+// bien plus grand (Cache Storage), sans ce risque.
 
 let isRefreshing = false
 let queue = []
@@ -42,20 +53,7 @@ const processQueue = (error, token = null) => {
 }
 
 api.interceptors.response.use(
-  // ----------------------------------------------------------
-  // Requête réussie : sauvegarde automatique en cache local
-  // ----------------------------------------------------------
-  (response) => {
-    if (response.config && response.config.method === 'get') {
-      const cacheKey = `pgst_cache_${response.config.url}`
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify(response.data))
-      } catch (e) {
-        console.warn('Erreur d\'écriture dans le localStorage :', e)
-      }
-    }
-    return response
-  },
+  (response) => response,
 
   // ----------------------------------------------------------
   // Erreur : gestion du 401 refresh et du secours hors-ligne
@@ -140,34 +138,10 @@ api.interceptors.response.use(
     }
 
     // ========================================================
-    // Secours Hors-ligne : Récupération depuis le localStorage
-    // ========================================================
-    const isGetRequest = originalRequest.method === 'get'
-    const isNetworkOrServerError = !error.response || error.response.status >= 500
-
-    if (isGetRequest && isNetworkOrServerError) {
-      const cacheKey = `pgst_cache_${originalRequest.url}`
-      const cachedData = localStorage.getItem(cacheKey)
-
-      if (cachedData) {
-        try {
-          // Renvoie une fausse réponse HTTP 200 contenant les données en cache
-          return Promise.resolve({
-            data: JSON.parse(cachedData),
-            status: 200,
-            statusText: 'OK (Cache Local)',
-            headers: {},
-            config: originalRequest,
-            isOfflineData: true,
-          })
-        } catch (e) {
-          console.warn('Erreur lors de la lecture du cache local :', e)
-        }
-      }
-    }
-
-    // ========================================================
-    // Signalement d'absence de réseau si aucun cache n'existe
+    // Signalement d'absence de réseau (le Service Worker a déjà tenté
+    // de servir une réponse en cache avant que ça n'arrive jusqu'ici ;
+    // si on arrive quand même là, c'est qu'aucune donnée en cache
+    // n'existait pour cette requête précise).
     // ========================================================
     if (!error.response) {
       error.isOffline = true
