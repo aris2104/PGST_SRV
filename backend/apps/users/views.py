@@ -602,6 +602,19 @@ class UserViewSet(viewsets.ModelViewSet):
         .all()
     )
 
+    def get_queryset(self):
+        qs = User.objects.select_related('role').all()
+        # ------------------------------------------------------------
+        # MODE FURTIF : un Admin/Super Admin est invisible dans les
+        # listes consultées par tous les autres rôles (membres, sélecteur
+        # de destinataires d'annonce, etc. — tout ce qui passe par ce
+        # même endpoint). L'Admin/Super Admin, lui, voit toujours tout le
+        # monde, y compris les autres comptes Admin.
+        # ------------------------------------------------------------
+        if self.action in ('list', 'retrieve') and not _est_admin_ou_plus(self.request.user):
+            qs = qs.exclude(role__code__in=['ADMIN', 'SUPER_ADMIN'])
+        return qs
+
     # --------------------------------------------------------
     # PERMISSIONS
     # --------------------------------------------------------
