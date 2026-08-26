@@ -162,6 +162,11 @@ class PresenceViewSet(viewsets.ModelViewSet):
             'PRESIDENT', 'SECRETAIRE', 'TRESORIER', 'DISCIPLINAIRE',
             'ORGANISATEUR', 'CEREMONIAIRE', 'CONSEILLER',
         ):
+            # MODE FURTIF : même un rôle "bureau" qui voit tout le monde
+            # ne doit pas voir les présences des comptes Admin/Super Admin
+            # dans le registre — sauf s'il est lui-même Admin/Super Admin.
+            if not is_admin_user(user):
+                qs = qs.exclude(servant__role__code__in=['ADMIN', 'SUPER_ADMIN'])
             return qs
         return qs.filter(servant=user)
 
@@ -188,6 +193,11 @@ class PresenceViewSet(viewsets.ModelViewSet):
     def servants(self, request):
         """Retourne la liste de tous les servants/membres actifs de manière sécurisée."""
         users = User.objects.filter(is_active=True)
+        # MODE FURTIF : Admin/Super Admin invisibles dans cette liste pour
+        # tout le monde sauf pour eux-mêmes (voir aussi UserViewSet.get_queryset
+        # dans apps/users/views.py, même règle appliquée là pour /users/).
+        if not is_admin_user(request.user):
+            users = users.exclude(role__code__in=['ADMIN', 'SUPER_ADMIN'])
         data = []
         for u in users:
             nom = getattr(u, 'nom', '') or getattr(u, 'last_name', '')

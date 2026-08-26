@@ -78,6 +78,12 @@ class SanctionViewSet(viewsets.ModelViewSet):
         )
         if not is_privileged:
             qs = qs.filter(servant=user)
+        elif not is_admin_user(user):
+            # MODE FURTIF : les rôles privilégiés non-Admin (Disciplinaire,
+            # Cérémoniaire, Président, Secrétaire, Conseiller, Trésorier)
+            # voient toutes les sanctions SAUF celles des comptes
+            # Admin/Super Admin. L'Admin, lui, voit tout.
+            qs = qs.exclude(servant__role__code__in=['ADMIN', 'SUPER_ADMIN'])
         return qs
 
     def get_serializer_class(self):

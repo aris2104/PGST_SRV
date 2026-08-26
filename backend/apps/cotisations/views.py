@@ -73,6 +73,12 @@ class CotisationViewSet(viewsets.ModelViewSet):
         # autant pouvoir enregistrer un paiement : c'est un droit de lecture.
         if not is_privileged:
             qs = qs.filter(servant=user)
+        elif not is_admin_user(user):
+            # MODE FURTIF : le Trésorier/Conseiller (privilégiés mais pas
+            # Admin) voient toutes les cotisations SAUF celles des comptes
+            # Admin/Super Admin. L'Admin, lui, voit tout, y compris les
+            # autres comptes Admin.
+            qs = qs.exclude(servant__role__code__in=['ADMIN', 'SUPER_ADMIN'])
         return qs
 
     def perform_create(self, serializer):
